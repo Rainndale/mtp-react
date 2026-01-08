@@ -26,10 +26,18 @@ const InstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Debug logging
+    console.log('InstallPrompt mounted. Standalone:', isInStandaloneMode(), 'IOS:', isIosDevice);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  // Debug: If we have a prompt, log it
+  useEffect(() => {
+    if (deferredPrompt) console.log('beforeinstallprompt captured!');
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
