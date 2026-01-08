@@ -2,4 +2,3 @@ node_modules
 dist
 .DS_Store
 .env
-trip_planner2.html
