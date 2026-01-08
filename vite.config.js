@@ -16,7 +16,9 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#f8fafc',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/mtp-react/',
+        scope: '/mtp-react/',
+        orientation: 'portrait',
         icons: [
           {
             src: 'pwa-192x192.png',
