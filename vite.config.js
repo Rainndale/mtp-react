@@ -3,11 +3,12 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/mtp-react/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'fonts/*'],
+      includeAssets: ['fonts/*'],
       manifest: {
         name: 'Voyager | Premium Trip Planner',
         short_name: 'Voyager',
