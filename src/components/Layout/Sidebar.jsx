@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import InstallPrompt from './InstallPrompt';
 
 const Sidebar = () => {
     const {
@@ -70,6 +71,7 @@ const Sidebar = () => {
                 >
                     <i className="fa-solid fa-plus mr-2"></i> New Expedition
                 </button>
+                <InstallPrompt />
             </nav>
 
             {/* Overlay */}
