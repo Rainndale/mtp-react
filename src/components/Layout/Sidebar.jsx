@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import InstallPrompt from './InstallPrompt';
 
 const Sidebar = () => {
     const {
@@ -22,9 +23,9 @@ const Sidebar = () => {
         <>
             {/* Sidebar */}
             <nav
-                className={`sidebar fixed inset-y-0 left-0 w-80 z-[110] p-6 flex flex-col transition-transform duration-400 ease-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`sidebar fixed inset-y-0 left-0 w-80 z-[300] p-6 flex flex-col transition-transform duration-400 ease-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
-                <div className="flex justify-between items-center mb-10">
+                <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
                         <i className="fa-solid fa-earth-americas mr-3 text-blue-500"></i> My Journeys
                     </h2>
@@ -61,21 +62,24 @@ const Sidebar = () => {
                     })}
                 </div>
 
-                <button
-                    onClick={() => {
-                        setIsModalOpen('TRIP_NEW');
-                        if (window.innerWidth < 768) toggleSidebar();
-                    }}
-                    className="mt-6 w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
-                >
-                    <i className="fa-solid fa-plus mr-2"></i> New Expedition
-                </button>
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        onClick={() => {
+                            setIsModalOpen('TRIP_NEW');
+                            if (window.innerWidth < 768) toggleSidebar();
+                        }}
+                        className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
+                    >
+                        <i className="fa-solid fa-plus mr-2"></i> New Expedition
+                    </button>
+                    <InstallPrompt />
+                </div>
             </nav>
 
             {/* Overlay */}
             <div
                 onClick={toggleSidebar}
-                className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[105] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[250] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
             ></div>
         </>
     );
