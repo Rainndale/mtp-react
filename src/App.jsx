@@ -6,7 +6,7 @@ import TripModal from './components/Modals/TripModal';
 import ItineraryList from './components/Itinerary/ItineraryList';
 
 function App() {
-  const { activeTrip, loading, setIsModalOpen } = useApp();
+  const { activeTrip, loading, setIsModalOpen, sidebarOpen, toggleSidebar } = useApp();
 
   if (loading) {
       return (
@@ -23,6 +23,11 @@ function App() {
 
   return (
     <div className="min-h-screen pb-24">
+      {/* Sidebar Overlay */}
+      <div
+          onClick={toggleSidebar}
+          className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[9998] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      ></div>
       <Sidebar />
       <Header />
 

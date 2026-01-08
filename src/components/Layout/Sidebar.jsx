@@ -76,11 +76,6 @@ const Sidebar = () => {
                 </div>
             </nav>
 
-            {/* Overlay */}
-            <div
-                onClick={toggleSidebar}
-                className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[9998] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-            ></div>
         </>
     );
 };
