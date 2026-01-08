@@ -42,30 +42,29 @@ const InstallPrompt = () => {
     }
   };
 
-  if (isStandalone) return null;
-
-  if (deferredPrompt) {
+  if (isStandalone) {
     return (
-      <button
-        onClick={handleInstallClick}
-        className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
-      >
-        <i className="fa-solid fa-download"></i>
-        <span>Install App</span>
-      </button>
+        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-xs text-center font-bold">
+            <i className="fa-solid fa-check-circle mr-1"></i> App Installed
+        </div>
     );
   }
 
-  // Optional: Show iOS instructions
-  if (isIOS) {
-      return (
-          <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs text-slate-500 text-center">
-              <p>To install: tap <i className="fa-solid fa-arrow-up-from-bracket mx-1"></i> then "Add to Home Screen"</p>
-          </div>
-      )
-  }
-
-  return null;
+  return (
+    <button
+      onClick={() => {
+          if (deferredPrompt) {
+              handleInstallClick();
+          } else {
+              alert("To install, tap 'Share' > 'Add to Home Screen' or look for the Install option in your browser menu.");
+          }
+      }}
+      className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
+    >
+      <i className="fa-solid fa-download"></i>
+      <span>{deferredPrompt ? 'Install App' : 'Install App'}</span>
+    </button>
+  );
 };
 
 export default InstallPrompt;
