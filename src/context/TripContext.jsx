@@ -25,6 +25,14 @@ export const TripProvider = ({ children }) => {
         }
     }, []);
 
+    // Update Status Bar Color
+    useEffect(() => {
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', isDarkMode ? '#0f172a' : '#f8fafc');
+        }
+    }, [isDarkMode]);
+
     // Toggle Theme
     const toggleTheme = () => {
         const newMode = !isDarkMode;
