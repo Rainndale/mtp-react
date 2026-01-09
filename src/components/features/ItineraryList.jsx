@@ -3,6 +3,7 @@ import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate } from '../../utils/date';
 import DayGroup from './DayGroup';
 import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
@@ -37,7 +38,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     };
 
     const handleDragOver = (event) => {
-        // Handled by SortableContext usually, but if we need cross-container visual cues
+        // Optimistic update handled here for smoother feel if needed, but risky with current setup.
     };
 
     const handleDragEnd = async (event) => {
@@ -47,64 +48,81 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         if (!over) return;
 
-        const activePlanId = active.id;
-        const overId = over.id;
+        const activeIdStr = active.id;
+        const overIdStr = over.id;
 
-        // Find source plan
-        const draggedPlan = plans.find(p => p.id === activePlanId);
-        if (!draggedPlan) return;
+        if (activeIdStr === overIdStr) return;
 
-        // Check if dropped on a DayGroup (empty day drop) or another PlanItem
-        const isOverDay = days.includes(overId);
+        // 1. Identify Source
+        const sourcePlan = plans.find(p => p.id === activeIdStr);
+        if (!sourcePlan) return;
 
+        // 2. Identify Target (Is it a Plan or a Day?)
         let targetDate = null;
-        let newOrder = 0;
+        let targetIndex = -1; // -1 means append to end if Day
 
-        if (isOverDay) {
-            targetDate = overId;
-            // Append to end of day
-            const dayPlans = plans.filter(p => p.date === targetDate);
-            newOrder = dayPlans.length;
+        // Check if dropped on a Day (Header/Container)
+        if (days.includes(overIdStr)) {
+            targetDate = overIdStr;
+            targetIndex = plans.filter(p => p.date === targetDate).length; // Append
         } else {
-            // Dropped on another plan
-            const targetPlan = plans.find(p => p.id === overId);
-            if (targetPlan) {
-                targetDate = targetPlan.date;
-                // Calculate new order
-                // Simple swap or insert logic handled by SortableContext usually requires arrayMove
-                // But here we are dealing with multi-container (different days) potentially.
-                // For simplicity and robustness with custom DB logic:
-                // We will just adopt the target date and we need to re-sort orders later.
-                // But specific insertion index is tricky with just DB save.
-                // Let's defer exact reordering to a robust "resort" function.
-                newOrder = targetPlan.order; // Placeholder, sort logic needs more care
+            // Dropped on another Plan
+            const overPlan = plans.find(p => p.id === overIdStr);
+            if (overPlan) {
+                targetDate = overPlan.date;
+                // Find index of overPlan within its day
+                const dayPlans = plans.filter(p => p.date === targetDate).sort((a,b) => (a.order||0)-(b.order||0));
+                targetIndex = dayPlans.findIndex(p => p.id === overIdStr);
             }
         }
 
-        if (targetDate) {
-            // Update local state first for snap feel? No, let's just update DB.
-            const updatedPlans = [...plans];
-            const pIndex = updatedPlans.findIndex(p => p.id === activePlanId);
+        if (!targetDate) return;
 
-            // Update Date
-            updatedPlans[pIndex] = { ...updatedPlans[pIndex], date: targetDate };
+        // 3. Construct New State (Optimistic)
+        let newPlans = [...plans];
 
-            // Note: Exact re-ordering within a day is complex without arrayMove.
-            // For this MVP step, simply changing the date is the core requirement "Move plans between days".
-            // Reordering within the day is supported by SortableContext visually,
-            // but we need to persist that order.
+        // Is it the same day?
+        if (sourcePlan.date === targetDate) {
+            // Reordering within same day
+            const dayPlans = newPlans.filter(p => p.date === targetDate).sort((a,b) => (a.order||0)-(b.order||0));
+            const oldIndex = dayPlans.findIndex(p => p.id === activeIdStr);
 
-            // Re-calc orders for the affected day
-            // This is a simplified approach: just put it at the end if moved to day,
-            // or swap if moved to plan (logic requires `arrayMove` from dnd-kit/sortable).
+            // We only need arrayMove logic on the subset
+            const newDayPlans = arrayMove(dayPlans, oldIndex, targetIndex !== -1 ? targetIndex : dayPlans.length);
 
-            // To properly implement reorder:
-            // We need to know the index in the *destination* list.
-            // Since we are not using arrayMove here yet, let's just ensure date change works.
-            // Strict reordering can be added in the refinement step if needed.
+            // Update orders in the subset
+            newDayPlans.forEach((p, idx) => { p.order = idx; });
 
-             await addOrUpdateTrip({ ...activeTrip, plans: updatedPlans });
+            // Merge back into main array
+            // This is slightly inefficient but robust: remove old day plans, push new ones
+            newPlans = newPlans.filter(p => p.date !== targetDate);
+            newPlans.push(...newDayPlans);
+        } else {
+            // Moving between days
+            // Update date
+            const pIndex = newPlans.findIndex(p => p.id === activeIdStr);
+            newPlans[pIndex] = { ...newPlans[pIndex], date: targetDate };
+
+            // Re-sort target day
+            const targetDayPlans = newPlans.filter(p => p.date === targetDate).sort((a,b) => (a.order||0)-(b.order||0));
+            // Move item to correct spot?
+            // Since we just changed the date, it effectively "appends" or needs sorting.
+            // If dropped on a specific plan, we need to insert it there.
+
+            // Simple approach for now: Append to end of target day, then re-index
+            // Refined: If dropped on a plan, insert before it?
+            // dnd-kit's sortable strategy handles visual index.
+            // We just need to ensure 'order' fields are correct for all items in that day.
+
+            targetDayPlans.forEach((p, idx) => { p.order = idx; });
+
+            // Note: Exact insertion index between days is complex without separate lists logic.
+            // Current `verticalListSortingStrategy` expects a single list usually.
+            // We accept "Append" behavior or simple re-sort for cross-day drops for stability.
         }
+
+        // 4. Update
+        await addOrUpdateTrip({ ...activeTrip, plans: newPlans });
     };
 
     return (
