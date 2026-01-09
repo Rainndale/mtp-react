@@ -11,8 +11,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
     if (!activeTrip) {
@@ -137,7 +136,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             <DragOverlay>
                 {activeId && activePlan ? (
-                    <div style={{ width: 'var(--drag-width, 350px)' }}> {/* Width fix needed? */}
+                    <div className="w-full max-w-[97vw]">
                         <PlanItem plan={activePlan} isOverlay />
                     </div>
                 ) : null}
