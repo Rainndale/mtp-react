@@ -2,17 +2,29 @@ import React, { useState } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate } from '../../utils/date';
 import DayGroup from './DayGroup';
-import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
     const [activeId, setActiveId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
+    const [activeDay, setActiveDay] = useState(null); // For dragging days
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+        useSensor(MouseSensor, {
+            activationConstraint: {
+                delay: 1000,
+                tolerance: 10,
+            }
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 1000,
+                tolerance: 10,
+            }
+        })
     );
 
     if (!activeTrip) {
@@ -33,8 +45,16 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const handleDragStart = (event) => {
         const { active } = event;
         setActiveId(active.id);
-        const plan = plans.find(p => p.id === active.id);
-        if (plan) setActivePlan(plan);
+
+        // Check if it's a Day (active.id is a date string in 'YYYY-MM-DD' format usually, check against days array)
+        if (days.includes(active.id)) {
+            setActiveDay(active.id);
+            setActivePlan(null);
+        } else {
+            const plan = plans.find(p => p.id === active.id);
+            if (plan) setActivePlan(plan);
+            setActiveDay(null);
+        }
     };
 
     const handleDragOver = (event) => {
@@ -45,6 +65,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const { active, over } = event;
         setActiveId(null);
         setActivePlan(null);
+        setActiveDay(null);
 
         if (!over) return;
 
@@ -52,6 +73,35 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const overIdStr = over.id;
 
         if (activeIdStr === overIdStr) return;
+
+        // === CASE A: Dragging a DAY ===
+        if (days.includes(activeIdStr)) {
+            if (days.includes(overIdStr)) {
+                 // User dragged a Day onto another Day -> Swap Contents
+                 const sourceDate = activeIdStr;
+                 const targetDate = overIdStr;
+
+                 // Get plans for both days
+                 let newPlans = [...plans];
+
+                 // Separate plans
+                 const sourceDayPlans = newPlans.filter(p => p.date === sourceDate);
+                 const targetDayPlans = newPlans.filter(p => p.date === targetDate);
+                 const otherPlans = newPlans.filter(p => p.date !== sourceDate && p.date !== targetDate);
+
+                 // Swap dates
+                 const updatedSourcePlans = sourceDayPlans.map(p => ({ ...p, date: targetDate }));
+                 const updatedTargetPlans = targetDayPlans.map(p => ({ ...p, date: sourceDate }));
+
+                 // Merge
+                 newPlans = [...otherPlans, ...updatedSourcePlans, ...updatedTargetPlans];
+
+                 await addOrUpdateTrip({ ...activeTrip, plans: newPlans });
+            }
+            return;
+        }
+
+        // === CASE B: Dragging a PLAN ===
 
         // 1. Identify Source
         const sourcePlan = plans.find(p => p.id === activeIdStr);
@@ -109,11 +159,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             // Since we just changed the date, it effectively "appends" or needs sorting.
             // If dropped on a specific plan, we need to insert it there.
 
-            // Simple approach for now: Append to end of target day, then re-index
-            // Refined: If dropped on a plan, insert before it?
-            // dnd-kit's sortable strategy handles visual index.
-            // We just need to ensure 'order' fields are correct for all items in that day.
-
             targetDayPlans.forEach((p, idx) => { p.order = idx; });
 
             // Note: Exact insertion index between days is complex without separate lists logic.
@@ -134,29 +179,40 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             onDragEnd={handleDragEnd}
         >
             <div className="relative space-y-6 pb-24">
-                {days.map((date, idx) => {
-                    const dayPlans = plans
-                        .filter(p => p.date === date)
-                        .sort((a, b) => (a.order || 0) - (b.order || 0)); // Simple sort by order
+                <SortableContext items={days} strategy={verticalListSortingStrategy}>
+                    {days.map((date, idx) => {
+                        const dayPlans = plans
+                            .filter(p => p.date === date)
+                            .sort((a, b) => (a.order || 0) - (b.order || 0)); // Simple sort by order
 
-                    return (
-                        <DayGroup
-                            key={date}
-                            date={date}
-                            dayIndex={idx}
-                            plans={dayPlans}
-                            onAddPlan={() => onOpenPlanModal(date)}
-                            onEditPlan={onEditPlan}
-                        />
-                    );
-                })}
+                        return (
+                            <DayGroup
+                                key={date}
+                                date={date}
+                                dayIndex={idx}
+                                plans={dayPlans}
+                                onAddPlan={() => onOpenPlanModal(date)}
+                                onEditPlan={onEditPlan}
+                            />
+                        );
+                    })}
+                </SortableContext>
             </div>
 
             <DragOverlay>
-                {activeId && activePlan ? (
-                    <div className="w-full max-w-[97vw]">
-                        <PlanItem plan={activePlan} isOverlay />
-                    </div>
+                {activeId ? (
+                    activeDay ? (
+                         <div className="w-[95%] md:w-[99%] mx-auto glass rounded-lg px-4 py-3 bg-white/80 dark:bg-slate-800/90 shadow-xl border border-blue-500/30">
+                            <span className="text-blue-600 text-xs font-black uppercase tracking-widest block mb-1">Moving Day</span>
+                            <h3 className="text-[var(--text-main)] font-extrabold text-lg">{formatDate(activeDay)}</h3>
+                        </div>
+                    ) : (
+                        activePlan && (
+                            <div className="w-full max-w-[97vw]">
+                                <PlanItem plan={activePlan} isOverlay />
+                            </div>
+                        )
+                    )
                 ) : null}
             </DragOverlay>
         </DndContext>
