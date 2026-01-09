@@ -78,8 +78,23 @@ export const TripProvider = ({ children }) => {
     };
 
     const addOrUpdateTrip = async (tripData) => {
+        // Optimistic update
+        setActiveTrip(tripData);
+        setTrips(prev => {
+            const idx = prev.findIndex(t => t.id === tripData.id);
+            if (idx >= 0) {
+                const newTrips = [...prev];
+                newTrips[idx] = tripData;
+                return newTrips;
+            }
+            return [...prev, tripData];
+        });
+
         await saveTrip(tripData);
-        await refreshTrips();
+        // refreshTrips() not strictly needed if we trust the optimistic update,
+        // but good for eventual consistency if DB adds fields.
+        // We'll leave it out to prevent 'snap back' if DB is slow, or verify it doesn't revert state.
+        // Actually, let's just save.
     };
 
     const removeTrip = async (id) => {

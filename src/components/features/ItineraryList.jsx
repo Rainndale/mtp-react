@@ -179,25 +179,23 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             onDragEnd={handleDragEnd}
         >
             <div className="relative space-y-6 pb-24">
-                <SortableContext items={days} strategy={verticalListSortingStrategy}>
-                    {days.map((date, idx) => {
-                        const dayPlans = plans
-                            .filter(p => p.date === date)
-                            .sort((a, b) => (a.order || 0) - (b.order || 0)); // Simple sort by order
+                {days.map((date, idx) => {
+                    const dayPlans = plans
+                        .filter(p => p.date === date)
+                        .sort((a, b) => (a.order || 0) - (b.order || 0)); // Simple sort by order
 
-                        return (
-                            <DayGroup
-                                key={date}
-                                date={date}
-                                dayIndex={idx}
-                                plans={dayPlans}
-                                onAddPlan={() => onOpenPlanModal(date)}
-                                onEditPlan={onEditPlan}
-                                activeId={activeId}
-                            />
-                        );
-                    })}
-                </SortableContext>
+                    return (
+                        <DayGroup
+                            key={date}
+                            date={date}
+                            dayIndex={idx}
+                            plans={dayPlans}
+                            onAddPlan={() => onOpenPlanModal(date)}
+                            onEditPlan={onEditPlan}
+                            activeId={activeId}
+                        />
+                    );
+                })}
             </div>
 
             <DragOverlay>
