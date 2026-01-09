@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import ItineraryList from './components/features/ItineraryList';
 import TripModal from './components/features/TripModal';
 import PlanModal from './components/features/PlanModal';
+import PlanViewModal from './components/features/PlanViewModal';
 import CinematicLoader from './components/ui/CinematicLoader';
 import { TripProvider, useTrip } from './context/TripContext';
 import { formatDate } from './utils/date';
@@ -14,7 +15,9 @@ const Content = () => {
     const [isTripModalOpen, setIsTripModalOpen] = useState(false);
     const [tripToEdit, setTripToEdit] = useState(null);
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+    const [isPlanViewModalOpen, setIsPlanViewModalOpen] = useState(false);
     const [planToEdit, setPlanToEdit] = useState(null);
+    const [planToView, setPlanToView] = useState(null);
     const [defaultPlanDate, setDefaultPlanDate] = useState(null);
 
     if (isLoading) return <CinematicLoader isVisible={true} />;
@@ -30,7 +33,13 @@ const Content = () => {
         setIsPlanModalOpen(true);
     };
 
-    const handleEditPlan = (plan) => {
+    const handleViewPlan = (plan) => {
+        setPlanToView(plan);
+        setIsPlanViewModalOpen(true);
+    };
+
+    const handleEditPlanFromView = (plan) => {
+        setIsPlanViewModalOpen(false);
         setPlanToEdit(plan);
         setDefaultPlanDate(null);
         setIsPlanModalOpen(true);
@@ -66,7 +75,7 @@ const Content = () => {
 
                 <ItineraryList
                     onOpenPlanModal={handleOpenPlanModal}
-                    onEditPlan={handleEditPlan}
+                    onEditPlan={handleViewPlan}
                 />
             </div>
 
@@ -81,6 +90,13 @@ const Content = () => {
                 onClose={() => setIsPlanModalOpen(false)}
                 planToEdit={planToEdit}
                 defaultDate={defaultPlanDate}
+            />
+
+            <PlanViewModal
+                isOpen={isPlanViewModalOpen}
+                onClose={() => setIsPlanViewModalOpen(false)}
+                plan={planToView}
+                onEdit={handleEditPlanFromView}
             />
         </div>
     );
