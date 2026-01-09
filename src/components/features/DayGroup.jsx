@@ -3,31 +3,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PlanItem from './PlanItem';
 import { useTrip } from '../../context/TripContext';
 import { formatDate } from '../../utils/date';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
-    // DnD Droppable for the Day
-    const { setNodeRef, isOver } = useDroppable({
+    // DnD Sortable for the Day
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
         id: date,
         data: { type: 'DAY', date }
     });
 
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        transition,
+        zIndex: isDragging ? 20 : 'auto', // Higher z-index when dragging
+        opacity: isDragging ? 0.4 : 1, // Visual cue for the item being moved
+        position: 'relative' // Needed for z-index
+    };
+
     return (
         <div
             ref={setNodeRef}
-            className={`day-group mb-2 transition-all duration-200 ${isOver ? 'opacity-50' : ''}`} // Visual cue for empty day drop
+            style={style}
+            className={`day-group mb-2 transition-all duration-200`}
         >
             <div
+                {...attributes}
+                {...listeners}
                 onClick={() => toggleDayCollapse(activeTrip.id, date)}
                 className={`
                     day-header glass rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
                     ${isCollapsed ? 'opacity-60' : ''}
-                    sticky top-[48px] md:top-[56px] z-40
+                    sticky top-[48px] md:top-[56px] z-40 touch-none
                 `}
             >
                 <div className="flex items-center">
