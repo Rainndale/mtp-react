@@ -6,7 +6,7 @@ import { formatDate } from '../../utils/date';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan }) => {
+const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
@@ -17,25 +17,36 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan }) => {
         setNodeRef,
         transform,
         transition,
-        isDragging
+        isDragging,
+        isOver
     } = useSortable({
         id: date,
         data: { type: 'DAY', date }
     });
+
+    // Determine if we should show the swap indicator
+    // Logic: If something is hovering over this day (isOver) AND the active dragged item is ALSO a Day (date string check)
+    // Note: strict date string check might need regex or context, but `ItineraryList` handles `activeId` being a day.
+    // If activeId looks like a date 'YYYY-MM-DD', it is a day.
+    const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
+    const showSwapIndicator = isOver && isDraggingDay && !isDragging;
 
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
         zIndex: isDragging ? 20 : 'auto', // Higher z-index when dragging
         opacity: isDragging ? 0.4 : 1, // Visual cue for the item being moved
-        position: 'relative' // Needed for z-index
+        position: 'relative', // Needed for z-index
     };
 
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className={`day-group mb-2 transition-all duration-200`}
+            className={`
+                day-group mb-2 transition-all duration-200 rounded-lg
+                ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
+            `}
         >
             <div
                 {...attributes}
