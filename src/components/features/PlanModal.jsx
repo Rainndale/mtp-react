@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import ConfirmationModal from '../ui/ConfirmationModal';
 import FloatingInput from '../ui/FloatingInput';
 import FloatingSelect from '../ui/FloatingSelect';
 import FloatingTextarea from '../ui/FloatingTextarea';
@@ -7,6 +8,7 @@ import { useTrip } from '../../context/TripContext';
 
 const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('Activity');
     const [status, setStatus] = useState('Tentative');
@@ -82,15 +84,28 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     };
 
     const handleDelete = async () => {
-        if (confirm("Delete this plan?")) {
-             const updatedTrip = { ...activeTrip };
-             updatedTrip.plans = updatedTrip.plans.filter(p => p.id !== planToEdit.id);
-             await addOrUpdateTrip(updatedTrip);
-             onClose();
-        }
+         const updatedTrip = { ...activeTrip };
+         updatedTrip.plans = updatedTrip.plans.filter(p => p.id !== planToEdit.id);
+         await addOrUpdateTrip(updatedTrip);
+         setShowDeleteConfirm(false);
+         onClose();
     };
 
     const categories = ['Activity', 'Flight', 'Hotel', 'Food', 'Transport', 'Sightseeing'];
+
+    if (showDeleteConfirm) {
+        return (
+            <ConfirmationModal
+                isOpen={true}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Remove Plan?"
+                confirmText="Delete"
+                cancelText="Cancel"
+                isDanger={true}
+            />
+        );
+    }
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -130,7 +145,7 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
             <div className="flex-shrink-0 pt-4 mt-auto">
                 <div className="flex space-x-3">
                     {planToEdit && (
-                        <button onClick={handleDelete} className="px-4 text-rose-500 font-bold text-sm text-center">Delete</button>
+                        <button onClick={() => setShowDeleteConfirm(true)} className="px-4 text-rose-500 font-bold text-sm text-center">Delete</button>
                     )}
                     <div className="flex-grow"></div>
                     <button onClick={onClose} className="px-6 py-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
