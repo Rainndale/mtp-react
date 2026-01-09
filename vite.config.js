@@ -8,28 +8,33 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['fonts/*'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'pwa-icon.svg'],
       manifest: {
-        id: '/mtp-react/',
         name: 'Voyager | Premium Trip Planner',
         short_name: 'Voyager',
         description: 'Premium Offline Trip Planner',
-        theme_color: '#ffffff',
+        theme_color: '#f8fafc',
         background_color: '#f8fafc',
         display: 'standalone',
+        orientation: 'portrait',
         start_url: '/mtp-react/',
         scope: '/mtp-react/',
-        orientation: 'portrait',
         icons: [
           {
-            src: '/mtp-react/pwa-192x192.png',
+            src: 'pwa-icon.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: '/mtp-react/pwa-512x512.png',
+            src: 'pwa-icon.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
+          },
+          {
+            src: 'pwa-icon.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           }
         ]
       },
