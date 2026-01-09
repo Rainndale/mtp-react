@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate } from '../../utils/date';
 import DayGroup from './DayGroup';
-import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
+import { customCollisionDetection } from '../../utils/dndStrategies';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -173,7 +174,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
