@@ -109,8 +109,13 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     };
 
     const handleSave = async (force = false) => {
-        if (!name || !startDate || !endDate) {
-            setValidationError("Please fill all fields");
+        const missingFields = [];
+        if (!name) missingFields.push("Trip Name");
+        if (!startDate) missingFields.push("Start Date");
+        if (!endDate) missingFields.push("End Date");
+
+        if (missingFields.length > 0) {
+            setValidationError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
             return;
         }
 
