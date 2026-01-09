@@ -11,8 +11,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
     );
 
     if (!activeTrip) {
