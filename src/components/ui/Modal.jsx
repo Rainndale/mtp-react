@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 
 const Modal = ({ isOpen, onClose, children, title }) => {
+    useEffect(() => {
+        if (isOpen) {
+            const originalStyle = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    }, [isOpen]);
+
     if (typeof document === 'undefined') return null;
 
     return createPortal(
@@ -14,7 +24,6 @@ const Modal = ({ isOpen, onClose, children, title }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        onClick={onClose}
                         className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                     />
                     <motion.div

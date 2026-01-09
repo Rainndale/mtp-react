@@ -17,6 +17,9 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     const [showConflict, setShowConflict] = useState(false);
     const [pendingTrip, setPendingTrip] = useState(null);
 
+    // Validation
+    const [validationError, setValidationError] = useState(null);
+
     // Delete Confirmation
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -40,6 +43,7 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
             }
             setShowConflict(false);
             setPendingTrip(null);
+            setValidationError(null);
         }
     }, [isOpen, tripToEdit]);
 
@@ -106,7 +110,7 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
 
     const handleSave = async (force = false) => {
         if (!name || !startDate || !endDate) {
-            alert("Please fill all fields"); // Basic validation for now
+            setValidationError("Please fill all fields");
             return;
         }
 
@@ -142,37 +146,6 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
         setShowDeleteConfirm(false);
         onClose();
     };
-
-    if (showDeleteConfirm) {
-        return (
-            <ConfirmationModal
-                isOpen={true}
-                onClose={() => setShowDeleteConfirm(false)}
-                onConfirm={handleDelete}
-                title="Abort Journey?"
-                confirmText="Delete Permanently"
-                cancelText="Keep Journey"
-                isDanger={true}
-            />
-        );
-    }
-
-    if (showConflict) {
-        return (
-             <Modal isOpen={isOpen} onClose={onClose}>
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="text-center pt-8">
-                        <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase mb-4 leading-none">Date Conflict</h2>
-                        <p className="text-[var(--text-muted)] mb-8 text-sm">Changing dates will remove plans outside the window.</p>
-                    </div>
-                </div>
-                <div className="flex-shrink-0 pt-4 mt-auto space-y-2">
-                     <button onClick={() => handleSave(true)} className="w-full py-4 bg-[var(--accent-blue)] text-white font-bold rounded-lg text-sm shadow-lg">Save & Remove</button>
-                     <button onClick={() => setShowConflict(false)} className="w-full py-4 text-[var(--text-muted)] font-bold text-sm">Back</button>
-                </div>
-            </Modal>
-        )
-    }
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -230,6 +203,41 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
                     <button onClick={() => handleSave(false)} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
                 </div>
             </div>
+
+            {/* Validation Alert */}
+            <ConfirmationModal
+                isOpen={!!validationError}
+                onClose={() => setValidationError(null)}
+                onConfirm={() => setValidationError(null)}
+                title="Missing Information"
+                message={validationError}
+                confirmText="OK"
+                showCancel={false}
+                variant="warning"
+            />
+
+            {/* Conflict Alert */}
+            <ConfirmationModal
+                isOpen={showConflict}
+                onClose={() => setShowConflict(false)}
+                onConfirm={() => handleSave(true)}
+                title="Date Conflict"
+                message="Changing dates will remove plans outside the window."
+                confirmText="Save & Remove"
+                cancelText="Back"
+                variant="warning"
+            />
+
+            {/* Delete Confirmation */}
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Abort Journey?"
+                confirmText="Delete Permanently"
+                cancelText="Keep Journey"
+                variant="danger"
+            />
         </Modal>
     );
 };

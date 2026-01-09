@@ -9,6 +9,8 @@ import { useTrip } from '../../context/TripContext';
 const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [validationError, setValidationError] = useState(null);
+
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('Activity');
     const [status, setStatus] = useState('Tentative');
@@ -45,12 +47,15 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                 setBookingRef('');
                 setDetails('');
             }
+            setValidationError(null);
         }
     }, [isOpen, planToEdit, defaultDate]);
 
     const handleSave = async () => {
-        if (!title || !date) {
-            alert("Title and Date are required.");
+        // User Requirement: Only Activity Title is strictly required for the modal check.
+        // Although date is technically needed for itinerary placement, we relax the check as requested.
+        if (!title) {
+            setValidationError("Activity Title is required.");
             return;
         }
 
@@ -59,7 +64,7 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
             title,
             category,
             status,
-            date,
+            date, // Note: If date is empty, it might not appear in a DayGroup unless logic handles unscheduled items.
             time,
             location,
             mapLink,
@@ -92,20 +97,6 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     };
 
     const categories = ['Activity', 'Flight', 'Hotel', 'Food', 'Transport', 'Sightseeing'];
-
-    if (showDeleteConfirm) {
-        return (
-            <ConfirmationModal
-                isOpen={true}
-                onClose={() => setShowDeleteConfirm(false)}
-                onConfirm={handleDelete}
-                title="Remove Plan?"
-                confirmText="Delete"
-                cancelText="Cancel"
-                isDanger={true}
-            />
-        );
-    }
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -152,6 +143,29 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                     <button onClick={handleSave} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
                 </div>
             </div>
+
+            {/* Validation Alert */}
+            <ConfirmationModal
+                isOpen={!!validationError}
+                onClose={() => setValidationError(null)}
+                onConfirm={() => setValidationError(null)}
+                title="Missing Information"
+                message={validationError}
+                confirmText="OK"
+                showCancel={false}
+                variant="warning"
+            />
+
+            {/* Delete Confirmation */}
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Remove Plan?"
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+            />
         </Modal>
     );
 };
