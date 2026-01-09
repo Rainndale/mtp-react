@@ -85,7 +85,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
     return (
         <div
             ref={setNodeRef}
-            style={{...style, touchAction: 'none'}}
+            style={style}
             {...attributes}
             {...listeners}
             onClick={onClick}
