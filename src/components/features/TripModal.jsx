@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import ConfirmationModal from '../ui/ConfirmationModal';
 import FloatingInput from '../ui/FloatingInput';
 import { useTrip } from '../../context/TripContext';
 import { formatDate } from '../../utils/date';
@@ -15,6 +16,9 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     // Conflict handling
     const [showConflict, setShowConflict] = useState(false);
     const [pendingTrip, setPendingTrip] = useState(null);
+
+    // Delete Confirmation
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -134,11 +138,24 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     };
 
     const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this journey?")) {
-            await removeTrip(tripToEdit.id);
-            onClose();
-        }
+        await removeTrip(tripToEdit.id);
+        setShowDeleteConfirm(false);
+        onClose();
     };
+
+    if (showDeleteConfirm) {
+        return (
+            <ConfirmationModal
+                isOpen={true}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Abort Journey?"
+                confirmText="Delete Permanently"
+                cancelText="Keep Journey"
+                isDanger={true}
+            />
+        );
+    }
 
     if (showConflict) {
         return (
@@ -206,7 +223,7 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
             <div className="flex-shrink-0 pt-4 mt-auto">
                 <div className="flex space-x-3">
                     {tripToEdit && (
-                        <button onClick={handleDelete} className="px-4 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all text-sm">Delete</button>
+                        <button onClick={() => setShowDeleteConfirm(true)} className="px-4 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all text-sm">Delete</button>
                     )}
                     <div className="flex-grow"></div>
                     <button onClick={onClose} className="px-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
