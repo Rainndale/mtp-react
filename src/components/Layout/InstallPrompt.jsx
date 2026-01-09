@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const InstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [showInstructionModal, setShowInstructionModal] = useState(false);
 
   useEffect(() => {
     // Check if running in standalone mode
@@ -59,19 +61,31 @@ const InstallPrompt = () => {
   }
 
   return (
-    <button
-      onClick={() => {
-          if (deferredPrompt) {
-              handleInstallClick();
-          } else {
-              alert("To install, tap 'Share' > 'Add to Home Screen' or look for the Install option in your browser menu.");
-          }
-      }}
-      className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
-    >
-      <i className="fa-solid fa-download"></i>
-      <span>{deferredPrompt ? 'Install App' : 'Install App'}</span>
-    </button>
+    <>
+        <button
+          onClick={() => {
+              if (deferredPrompt) {
+                  handleInstallClick();
+              } else {
+                  setShowInstructionModal(true);
+              }
+          }}
+          className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
+        >
+          <i className="fa-solid fa-download"></i>
+          <span>{deferredPrompt ? 'Install App' : 'Install App'}</span>
+        </button>
+
+        <ConfirmationModal
+            isOpen={showInstructionModal}
+            onClose={() => setShowInstructionModal(false)}
+            title="Install App"
+            message="To install, tap 'Share' > 'Add to Home Screen' or look for the Install option in your browser menu."
+            confirmText="Got it"
+            showCancel={false}
+            variant="info"
+        />
+    </>
   );
 };
 
