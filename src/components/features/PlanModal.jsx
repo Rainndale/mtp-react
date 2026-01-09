@@ -54,8 +54,11 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     const handleSave = async () => {
         // User Requirement: Only Activity Title is strictly required for the modal check.
         // Although date is technically needed for itinerary placement, we relax the check as requested.
-        if (!title) {
-            setValidationError("Activity Title is required.");
+        const missingFields = [];
+        if (!title) missingFields.push("Activity Title");
+
+        if (missingFields.length > 0) {
+            setValidationError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
             return;
         }
 
