@@ -1,12 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- White Background -->
+  <defs>
+    <!-- Pin Shape: A circle with a pointed bottom -->
+    <!-- Head radius 130, Center at 512, 350. Point goes down to 650. -->
+    <path id="pin" d="M512 220 c71.8 0 130 58.2 130 130 c0 71.8 -130 200 -130 200 s -130 -128.2 -130 -200 c0 -71.8 58.2 -130 130 -130 Z" />
+
+    <!-- Pin Hole: A circle in the center of the head -->
+    <circle id="pinHole" cx="512" cy="350" r="50" />
+
+    <!-- Pin Outline: The pin shape dilated. We simulate this by using a thick stroke on the pin path -->
+    <!-- We will use this to cut the map. -->
+    <use id="pinOutline" href="#pin" stroke="black" stroke-width="40" stroke-linejoin="round" fill="black" />
+  </defs>
+
+  <!-- Background -->
   <rect width="1024" height="1024" fill="white"/>
 
-  <!-- Black Icon: fa-map-location-dot centered and scaled with padding -->
-  <!-- Original viewbox 576 512. We center it in 1024x1024. -->
-  <!-- Scale factor: 1.2 (approx 690px width) to leave padding -->
-  <!-- Translation: Center it -->
-  <g transform="translate(224, 256) scale(1.0)">
-      <path fill="black" d="M408 120c0 54.6-73.1 151.9-105.2 192c-7.7 9.6-22 9.6-29.6 0C241.1 271.9 168 174.6 168 120C168 53.7 221.7 0 288 0s120 53.7 120 120zm8 80.4c3.5-6.9 6.7-13.8 9.6-20.6c.5-1.2 1-2.5 1.5-3.7l116-46.4C558.9 123.4 576 135 576 152V422.8c0 9.8-6 18.6-15.1 22.3L416 503V200.4zM137.6 138.3c2.4 14.1 7.2 28.3 12.8 41.5c2.9 6.8 6.1 13.7 9.6 20.6V451.8L32.9 402.7C13.9 395.2 0 376.9 0 356.5V85.6c0-13 10.7-25.3 25.6-25.6c4.7-.1 9.4 1.1 13.6 3.6l98.4 74.7z"/>
-  </g>
+  <!-- Map Shape -->
+  <!-- Constructed to look like a tri-fold map. Solid silhouette. -->
+  <!-- Left Wing: 162,350 -> 362,250 -> 362,750 -> 162,850 -->
+  <!-- Center Wing: 362,250 -> 662,250 -> 662,750 -> 362,750 -->
+  <!-- Right Wing: 662,250 -> 862,350 -> 862,850 -> 662,750 -->
+  <!-- Let's adjust coords to be centered and look good -->
+
+  <mask id="mapCutoutMask">
+    <rect width="100%" height="100%" fill="white" />
+    <!-- Cut out the pin outline -->
+    <use href="#pinOutline" fill="black" />
+  </mask>
+
+  <mask id="pinHoleMask">
+    <rect width="100%" height="100%" fill="white" />
+    <!-- Cut out the hole -->
+    <use href="#pinHole" fill="black" />
+  </mask>
+
+  <!-- The Map: Solid Black, Masked by the Pin Outline -->
+  <!-- Shape:
+       Left Top: 150, 400. Right Top: 874, 400.
+       Center Panel: x 380 to 644.
+       Let's trace a nice silhouette.
+       p1(150, 380) -> p2(362, 280) -> p3(662, 280) -> p4(874, 380)
+       p5(874, 800) -> p6(662, 700) -> p7(362, 700) -> p8(150, 800)
+  -->
+  <path d="M150 380 L362 280 L662 280 L874 380 V800 L662 700 L362 700 L150 800 Z"
+        fill="black"
+        mask="url(#mapCutoutMask)" />
+
+  <!-- The Pin: Solid Black, Masked by the Hole -->
+  <use href="#pin" fill="black" mask="url(#pinHoleMask)" />
+
 </svg>
