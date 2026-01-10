@@ -178,6 +178,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            accessibility={{ restoreFocus: false }}
         >
             <div className="relative space-y-6 pb-24">
                 {days.map((date, idx) => {
