@@ -158,11 +158,11 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
                 <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter mb-6 text-center leading-none">
                     {tripToEdit ? 'Edit Journey' : 'New Journey'}
                 </h2>
-                <div className="space-y-6">
+                <div className="space-y-3">
                     <FloatingInput label="Trip Name" value={name} onChange={(e) => setName(e.target.value)} />
 
                     <div>
-                        <div className="flex space-x-2 mb-3">
+                        <div className="flex space-x-3 mb-3">
                             <div className={`flex-1 p-3 border rounded-lg text-center transition-all duration-200 ${(!startDate && !endDate) || (startDate && endDate) ? 'border-[var(--accent-blue)] ring-1 ring-[var(--accent-blue)]' : 'border-[var(--input-border)] bg-[var(--input-bg)]'}`}>
                                 <span className="text-[10px] text-[var(--text-muted)] block uppercase font-black tracking-widest leading-none mb-1">Start Date</span>
                                 <span className="text-sm font-semibold text-[var(--text-main)]">{formatDate(startDate)}</span>
