@@ -107,10 +107,10 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                 <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter mb-6 text-center leading-none">
                     {planToEdit ? 'Edit Plan' : 'New Plan'}
                 </h2>
-                <div className="space-y-5">
+                <div className="space-y-3">
                     <FloatingInput label="Activity Title" value={title} onChange={(e) => setTitle(e.target.value)} />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <FloatingSelect label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={categories.map(c => ({value: c, label: c}))} />
                         <FloatingSelect label="Booking Status" value={status} onChange={(e) => setStatus(e.target.value)} options={[
                             {value: 'Tentative', label: 'Tentative'},
@@ -119,7 +119,7 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                         ]} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                         <FloatingInput type="date" label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
                         <FloatingInput type="time" label="Time" value={time} onChange={(e) => setTime(e.target.value)} />
                     </div>
@@ -127,7 +127,7 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                     <FloatingInput label="Location Address" value={location} onChange={(e) => setLocation(e.target.value)} />
                     <FloatingInput label="Map Link (Google Maps URL)" value={mapLink} onChange={(e) => setMapLink(e.target.value)} />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <FloatingInput label="Cost" value={cost} onChange={(e) => setCost(e.target.value)} />
                         <FloatingInput label="Booking Ref" value={bookingRef} onChange={(e) => setBookingRef(e.target.value)} />
                     </div>
