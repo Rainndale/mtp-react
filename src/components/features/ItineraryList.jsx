@@ -13,6 +13,20 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
 
+    // Lock body scroll during drag to prevent background scrolling on mobile
+    React.useEffect(() => {
+        if (activeId) {
+            // Prevent touch actions (scrolling) on the body
+            document.body.style.touchAction = 'none';
+        } else {
+            document.body.style.touchAction = '';
+        }
+
+        return () => {
+            document.body.style.touchAction = '';
+        };
+    }, [activeId]);
+
     const sensors = useSensors(
         useSensor(MouseSensor, {
             activationConstraint: {
