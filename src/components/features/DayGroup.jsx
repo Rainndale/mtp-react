@@ -58,7 +58,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 className={`
                     day-header glass rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${isCollapsed ? 'opacity-60' : ''}
                     sticky top-[48px] md:top-[56px] z-40
                 `}
             >
