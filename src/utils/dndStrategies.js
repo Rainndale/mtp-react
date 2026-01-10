@@ -1,4 +1,4 @@
-import { closestCorners } from '@dnd-kit/core';
+import { closestCorners, pointerWithin } from '@dnd-kit/core';
 
 export const customCollisionDetection = (args) => {
     const { active, droppableContainers } = args;
@@ -13,10 +13,10 @@ export const customCollisionDetection = (args) => {
             (container) => container.data.current?.type === 'DAY'
         );
 
-        // Use closestCorners on the filtered list
-        // This ensures dragging a Day only detects collisions with other Day headers/containers
-        // ignoring the Plans inside them.
-        return closestCorners({
+        // Use pointerWithin on the filtered list
+        // This ensures dragging a Day only detects collisions when the pointer is
+        // explicitly INSIDE another Day container, providing more precise target detection.
+        return pointerWithin({
             ...args,
             droppableContainers: dayContainers,
         });
