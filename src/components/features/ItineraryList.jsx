@@ -97,12 +97,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const plans = localPlans;
 
     const handleDragStart = (event) => {
+        // Trigger haptic feedback immediately before any state updates to ensure priority in the event loop
+        if (navigator.vibrate) {
+            navigator.vibrate(20);
+        }
+
         const { active } = event;
         setActiveId(active.id);
-
-        if (navigator.vibrate) {
-            navigator.vibrate(15);
-        }
 
         // Check if it's a Day (active.id is a date string in 'YYYY-MM-DD' format usually, check against days array)
         if (days.includes(active.id)) {
