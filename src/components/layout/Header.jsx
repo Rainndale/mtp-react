@@ -5,7 +5,7 @@ const Header = ({ onToggleSidebar, onEditTrip }) => {
     const { activeTrip, isDarkMode, toggleTheme } = useTrip();
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-[var(--card-bg)] border-b border-[var(--card-border)] z-50 px-4 md:px-8 flex items-center justify-between">
+        <header className="fixed top-0 left-0 right-0 h-14 md:h-16 glass !border-t-0 !border-x-0 z-50 px-4 md:px-8 flex items-center justify-between">
             <button
                 onClick={onToggleSidebar}
                 className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100/20 transition-colors"
