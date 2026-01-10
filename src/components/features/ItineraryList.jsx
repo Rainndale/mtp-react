@@ -97,12 +97,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const plans = localPlans;
 
     const handleDragStart = (event) => {
+        // Trigger haptic feedback immediately before any state updates to ensure priority in the event loop
+        if (navigator.vibrate) {
+            navigator.vibrate(20);
+        }
+
         const { active } = event;
         setActiveId(active.id);
-
-        if (navigator.vibrate) {
-            navigator.vibrate(15);
-        }
 
         // Check if it's a Day (active.id is a date string in 'YYYY-MM-DD' format usually, check against days array)
         if (days.includes(active.id)) {
@@ -263,7 +264,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             <DragOverlay dropAnimation={null} zIndex={100}>
                 {activeId ? (
                     activeDay ? (
-                         <div className="w-[95%] md:w-[99%] mx-auto bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl border-2 border-[var(--accent-blue)] scale-105 rotate-1 transition-transform">
+                         <div className="w-[95%] md:w-[99%] mx-auto glass rounded-lg px-4 py-3 bg-white dark:bg-slate-800 shadow-2xl border-2 border-[var(--accent-blue)] scale-105 transition-transform">
                             <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
                             <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDate(activeDay)}</h3>
                         </div>
