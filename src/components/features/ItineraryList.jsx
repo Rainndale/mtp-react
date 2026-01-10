@@ -14,15 +14,26 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeDay, setActiveDay] = useState(null); // For dragging days
 
     // Lock body scroll during drag to prevent background scrolling on mobile
+    // Using explicit touchmove listener is more robust than style.touchAction on iOS for active drags
     React.useEffect(() => {
+        const preventScroll = (e) => {
+            if (activeId) {
+                e.preventDefault();
+            }
+        };
+
         if (activeId) {
-            // Prevent touch actions (scrolling) on the body
+            // "passive: false" is required to allow preventDefault()
+            document.addEventListener('touchmove', preventScroll, { passive: false });
+            // Also adding touch-action: none as a fallback layer
             document.body.style.touchAction = 'none';
         } else {
+            document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
         }
 
         return () => {
+            document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
         };
     }, [activeId]);
@@ -214,10 +225,10 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 })}
             </div>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={null} zIndex={100}>
                 {activeId ? (
                     activeDay ? (
-                         <div className="w-[95%] md:w-[99%] mx-auto glass rounded-lg px-4 py-3 bg-white/80 dark:bg-slate-800/90 shadow-xl border border-blue-500/30">
+                         <div className="w-[95%] md:w-[99%] mx-auto glass rounded-lg px-4 py-3 bg-white dark:bg-slate-800 shadow-2xl border-2 border-[var(--accent-blue)] scale-105 rotate-1 transition-transform">
                             <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
                             <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDate(activeDay)}</h3>
                         </div>
