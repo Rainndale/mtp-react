@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                                 key={t.id}
                                 onClick={() => {
                                     setActiveTripId(t.id);
-                                    if (window.innerWidth < 768) onClose();
+                                    onClose();
                                 }}
                                 className={`p-4 rounded-lg cursor-pointer border transition-all ${
                                     isSelected
@@ -56,7 +56,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                     <button
                         onClick={() => {
                             onOpenTripModal();
-                            if (window.innerWidth < 768) onClose();
+                            onClose();
                         }}
                         className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
                     >
