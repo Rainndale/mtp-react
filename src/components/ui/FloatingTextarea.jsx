@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const FloatingTextarea = ({ label, value, onChange, ...props }) => {
+const FloatingTextarea = ({ label, value, onChange, onFocus, onBlur, ...props }) => {
     const [isFocused, setIsFocused] = useState(false);
     const hasValue = value !== undefined && value !== null && value !== '';
     const textareaRef = useRef(null);
@@ -17,14 +17,24 @@ const FloatingTextarea = ({ label, value, onChange, ...props }) => {
         autoResize();
     }, [value]);
 
+    const handleFocus = (e) => {
+        setIsFocused(true);
+        if (onFocus) onFocus(e);
+    };
+
+    const handleBlur = (e) => {
+        setIsFocused(false);
+        if (onBlur) onBlur(e);
+    };
+
     return (
         <div className="relative">
             <textarea
                 ref={textareaRef}
                 value={value}
                 onChange={(e) => { onChange(e); autoResize(); }}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 className={`
                     block w-full min-h-[120px] px-3 pt-6 pb-2
                     text-sm bg-[var(--input-bg)] text-[var(--text-main)]
