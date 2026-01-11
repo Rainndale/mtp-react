@@ -4,10 +4,18 @@ const FloatingInput = ({ label, value, onChange, type = "text", ...props }) => {
     const [isFocused, setIsFocused] = useState(false);
     const hasValue = value !== undefined && value !== null && value !== '';
 
+    // Determine the effective type to render
+    // If it's a date or time input, but has no value and isn't focused,
+    // we render it as 'text' to hide the browser's default mask (e.g. --:-- or dd/mm/yyyy).
+    let effectiveType = type;
+    if ((type === 'date' || type === 'time') && !hasValue && !isFocused) {
+        effectiveType = 'text';
+    }
+
     return (
         <div className="relative">
             <input
-                type={type}
+                type={effectiveType}
                 value={value}
                 onChange={onChange}
                 onFocus={() => setIsFocused(true)}
