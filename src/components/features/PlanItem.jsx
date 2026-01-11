@@ -89,6 +89,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
             {...attributes}
             {...listeners}
             onClick={onClick}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             className={clsx(
                 "relative h-16 md:h-20 rounded-lg p-2 flex items-center cursor-pointer transition-all group w-[90.25%] md:w-[94.05%] mx-auto hover:shadow-md bg-[var(--card-bg)] border border-[var(--card-border)] overflow-visible",
                 // pseudo-element logic for hit area handled by structure in React usually differently,
