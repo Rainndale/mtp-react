@@ -54,13 +54,13 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     </div>
 
                     {plan.mapLink && (
-                        <a href={plan.mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
-                            <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] group-hover:bg-[var(--accent-blue)] group-hover:text-white transition-colors flex items-center justify-center mr-3 flex-shrink-0">
+                        <a href={plan.mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-map-location-dot text-xs"></i>
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-1">View on Map</p>
-                                <p className="text-sm font-semibold text-[var(--accent-blue)] group-hover:text-[var(--text-main)] break-words">
+                                <p className="text-sm font-semibold text-[var(--accent-blue)] break-words">
                                     Open Link <i className="fa-solid fa-arrow-up-right-from-square ml-1 text-xs opacity-50"></i>
                                 </p>
                             </div>
@@ -68,13 +68,13 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     )}
 
                     {plan.location && (
-                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
-                            <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] group-hover:bg-[var(--accent-blue)] group-hover:text-white transition-colors flex items-center justify-center mr-3 flex-shrink-0">
+                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-train-subway text-xs"></i>
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-1">Transit Directions</p>
-                                <p className="text-sm font-semibold text-[var(--accent-blue)] group-hover:text-[var(--text-main)] break-words">
+                                <p className="text-sm font-semibold text-[var(--accent-blue)] break-words">
                                     Get Directions <i className="fa-solid fa-arrow-up-right-from-square ml-1 text-xs opacity-50"></i>
                                 </p>
                             </div>
