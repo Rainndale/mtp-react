@@ -61,7 +61,7 @@ const Content = () => {
             <div className="pt-16 md:pt-20 px-0 md:px-8 w-full md:w-[97vw] mx-auto">
                 {activeTrip && (
                     <div className="relative w-[95%] md:w-full mx-auto h-48 md:h-64 rounded-lg overflow-hidden mb-8 shadow-xl animate-fade-in">
-                        <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200" alt="Travel" className="w-full h-full object-cover" />
+                        <img src="./header-bg.jpg" alt="Travel" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
                         <div className="absolute bottom-6 left-6 right-6">
                             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic">{activeTrip.name}</h1>
