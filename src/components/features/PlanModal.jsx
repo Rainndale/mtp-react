@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../ui/Modal';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import FloatingInput from '../ui/FloatingInput';
@@ -21,6 +21,11 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
     const [cost, setCost] = useState('');
     const [bookingRef, setBookingRef] = useState('');
     const [details, setDetails] = useState('');
+
+    // State to track if the Notes field is focused
+    const [isNotesFocused, setIsNotesFocused] = useState(false);
+    // Ref for the scrollable container
+    const scrollContainerRef = useRef(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -50,6 +55,13 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
             setValidationError(null);
         }
     }, [isOpen, planToEdit, defaultDate]);
+
+    // Auto-scroll to bottom when notes expand while focused
+    useEffect(() => {
+        if (isNotesFocused && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+    }, [details, isNotesFocused]);
 
     const handleSave = async () => {
         // User Requirement: Only Activity Title is strictly required for the modal check.
@@ -103,7 +115,10 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <div className="flex-1 overflow-y-auto min-h-0 -ml-1 pl-1 -mr-2 pr-2 pb-2 scrollbar-hide">
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto min-h-0 -ml-1 pl-1 -mr-2 pr-2 pb-2 scrollbar-hide"
+            >
                 <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter mb-6 text-center leading-none">
                     {planToEdit ? 'Edit Plan' : 'New Plan'}
                 </h2>
@@ -132,7 +147,13 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
                         <FloatingInput label="Booking Ref" value={bookingRef} onChange={(e) => setBookingRef(e.target.value)} />
                     </div>
 
-                    <FloatingTextarea label="Notes" value={details} onChange={(e) => setDetails(e.target.value)} />
+                    <FloatingTextarea
+                        label="Notes"
+                        value={details}
+                        onChange={(e) => setDetails(e.target.value)}
+                        onFocus={() => setIsNotesFocused(true)}
+                        onBlur={() => setIsNotesFocused(false)}
+                    />
                 </div>
             </div>
 
