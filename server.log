@@ -3,7 +3,8 @@
 > vite
 
 
-  VITE v5.4.21  ready in 394 ms
+  VITE v5.4.21  ready in 292 ms
 
   ➜  Local:   http://localhost:5173/mtp-react/
   ➜  Network: use --host to expose
+3:13:49 PM [vite] hmr update /src/components/layout/Header.jsx, /src/index.css
