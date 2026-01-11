@@ -76,7 +76,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
     if (isOverlay) {
          // Static render for Drag Overlay (no listeners/refs)
          return (
-            <div className="h-16 md:h-20 rounded-lg p-2 flex items-center bg-[var(--card-bg)] border border-[var(--card-border)] w-full shadow-lg overflow-hidden relative">
+            <div className="h-16 md:h-20 rounded-lg p-2 flex items-center bg-[var(--card-bg)] border border-[var(--card-border)] w-full shadow-2xl scale-105 transition-transform overflow-hidden relative">
                  {content}
             </div>
          );
