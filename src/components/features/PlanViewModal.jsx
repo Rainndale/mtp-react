@@ -54,7 +54,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     </div>
 
                     {plan.mapLink && (
-                        <a href={plan.mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
+                        <a href={plan.mapLink} className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
                             <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] group-hover:bg-[var(--accent-blue)] group-hover:text-white transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-map-location-dot text-xs"></i>
                             </div>
@@ -68,7 +68,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     )}
 
                     {plan.location && (
-                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
+                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] hover:bg-[var(--card-selected-bg)] hover:border-[var(--accent-blue)] transition-colors group">
                             <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] group-hover:bg-[var(--accent-blue)] group-hover:text-white transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-train-subway text-xs"></i>
                             </div>
