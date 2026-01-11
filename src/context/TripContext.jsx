@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadAllTrips, saveTrip, deleteTrip as deleteTripDB } from '../services/db';
+import mockTripData from '../data/mockTrip.json';
 
 const TripContext = createContext();
 
@@ -49,7 +50,14 @@ export const TripProvider = ({ children }) => {
     // Load Trips
     const refreshTrips = async () => {
         try {
-            const loadedTrips = await loadAllTrips();
+            let loadedTrips = await loadAllTrips();
+
+            // Auto-load mock trip if DB is empty
+            if (loadedTrips.length === 0) {
+                await saveTrip(mockTripData);
+                loadedTrips = [mockTripData];
+            }
+
             setTrips(loadedTrips);
 
             // Sync active trip if it exists
