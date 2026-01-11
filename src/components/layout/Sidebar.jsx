@@ -1,67 +1,81 @@
 import React from 'react';
-import { useTrip } from '../../context/TripContext';
-import { formatDate } from '../../utils/date'; // We will create this utils file
+import { useApp } from '../../context/AppContext';
+import InstallPrompt from './InstallPrompt';
 
-const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
-    const { trips, activeTrip, setActiveTripId } = useTrip();
+const Sidebar = () => {
+    const {
+        sidebarOpen,
+        toggleSidebar,
+        trips,
+        activeTrip,
+        setActiveTrip,
+        setIsModalOpen
+    } = useApp();
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'Select Date';
+        const d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
 
     return (
         <>
-            <div
-                className={`
-                    fixed inset-y-0 left-0 w-80 z-[110] p-6 flex flex-col
-                    bg-[var(--sidebar-bg)] border-r border-[var(--card-border)]
-                    transition-transform duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                `}
+            {/* Sidebar */}
+            <nav
+                className={`sidebar fixed inset-y-0 left-0 w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
-                <div className="flex justify-between items-center mb-10">
-                    <h2 className="text-xl font-bold tracking-tight text-[var(--text-main)] flex items-center">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
                         <i className="fa-solid fa-earth-americas mr-3 text-blue-500"></i> My Journeys
                     </h2>
-                    <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                    <button
+                        onClick={toggleSidebar}
+                        className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                    >
                         <i className="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
 
-                <div className="flex-grow overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                    {trips.map(trip => (
-                        <div
-                            key={trip.id}
-                            onClick={() => { setActiveTripId(trip.id); onClose(); }}
-                            className={`
-                                p-4 rounded-lg cursor-pointer border transition-all duration-200
-                                ${activeTrip?.id === trip.id
-                                    ? 'border-[var(--card-selected-border)] bg-[var(--card-selected-bg)] shadow-sm'
-                                    : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'}
-                            `}
-                        >
-                            <h4 className="text-[var(--text-main)] font-bold truncate">{trip.name}</h4>
-                            <p className="text-[var(--text-muted)] text-xs mt-1 font-medium">
-                                {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
-                            </p>
-                        </div>
-                    ))}
-                    {trips.length === 0 && (
-                        <p className="text-[var(--text-muted)] text-center text-sm italic">No journeys found.</p>
-                    )}
+                <div className="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                    {trips.map(t => {
+                        const isSelected = activeTrip?.id === t.id;
+                        return (
+                            <div
+                                key={t.id}
+                                onClick={() => {
+                                    setActiveTrip(t);
+                                    if (window.innerWidth < 768) toggleSidebar();
+                                }}
+                                className={`p-4 rounded-lg cursor-pointer border transition-all ${
+                                    isSelected
+                                        ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
+                                        : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                }`}
+                            >
+                                <h4 className="text-slate-900 dark:text-slate-100 font-bold truncate">{t.name || 'Untitled Trip'}</h4>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">
+                                    {formatDate(t.startDate)} - {formatDate(t.endDate)}
+                                </p>
+                            </div>
+                        );
+                    })}
                 </div>
 
-                <button
-                    onClick={() => { onOpenTripModal(null); onClose(); }}
-                    className="mt-6 w-full py-4 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg hover:bg-[var(--accent-blue-hover)] flex items-center justify-center"
-                >
-                    <i className="fa-solid fa-plus mr-2"></i> New Expedition
-                </button>
-            </div>
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        onClick={() => {
+                            setIsModalOpen('TRIP_NEW');
+                            if (window.innerWidth < 768) toggleSidebar();
+                        }}
+                        className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
+                    >
+                        <i className="fa-solid fa-plus mr-2"></i> New Expedition
+                    </button>
+                    <InstallPrompt />
+                </div>
+            </nav>
 
-            {/* Overlay */}
-            {isOpen && (
-                <div
-                    onClick={onClose}
-                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[105] transition-opacity duration-300"
-                />
-            )}
         </>
     );
 };
