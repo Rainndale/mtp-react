@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { formatDate } from '../../utils/date';
 
 const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
+    // SMART LINK FIX: Mobile detection to prevent white screen on Android PWA
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            return /android|ipad|iphone|ipod/i.test(userAgent);
+        };
+        setIsMobile(checkMobile());
+    }, []);
+
     if (!plan) return null;
 
     const statusColors = {
@@ -10,6 +21,11 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
         'Tentative': 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
         'Cancelled': 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20',
     };
+
+    // On mobile, we remove target="_blank" to allow native app intent interception
+    // On desktop, we keep it to open in a new tab
+    const targetAttr = isMobile ? undefined : "_blank";
+    const relAttr = isMobile ? undefined : "noopener noreferrer";
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -54,7 +70,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     </div>
 
                     {plan.mapLink && (
-                        <a href={plan.mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
+                        <a href={plan.mapLink} target={targetAttr} rel={relAttr} className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
                             <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-map-location-dot text-xs"></i>
                             </div>
@@ -68,7 +84,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                     )}
 
                     {plan.location && (
-                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} target="_blank" rel="noopener noreferrer" className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
+                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(plan.location)}&travelmode=transit`} target={targetAttr} rel={relAttr} className="flex items-center p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--card-border)] transition-colors">
                             <div className="w-8 h-8 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] transition-colors flex items-center justify-center mr-3 flex-shrink-0">
                                 <i className="fa-solid fa-train-subway text-xs"></i>
                             </div>
