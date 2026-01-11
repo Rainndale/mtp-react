@@ -103,6 +103,19 @@ const Content = () => {
 };
 
 function App() {
+  React.useEffect(() => {
+    const handleContextMenu = (e) => {
+      // Allow context menu for inputs and textareas so users can Paste
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   return (
     <TripProvider>
        <Content />
