@@ -69,13 +69,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const sensors = useSensors(
         useSensor(MouseSensor, {
             activationConstraint: {
-                delay: 500,
+                delay: 600,
                 tolerance: 5,
             }
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 500,
+                delay: 600,
                 tolerance: 5,
             }
         })
