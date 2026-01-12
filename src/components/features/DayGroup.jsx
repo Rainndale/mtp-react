@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlanItem from './PlanItem';
 import { useTrip } from '../../context/TripContext';
-import { formatDate } from '../../utils/date';
+import { formatDate, formatDayDate } from '../../utils/date';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -65,7 +65,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 <div className="flex items-center">
                     <div>
                         <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
-                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDate(date)}</h3>
+                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
                     </div>
                 </div>
                 <div className="text-[var(--text-muted)]">
