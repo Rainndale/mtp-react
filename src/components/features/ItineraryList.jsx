@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
@@ -12,6 +12,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeId, setActiveId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
+    const dragStartTime = useRef(0);
+
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
         if (!activeTrip?.plans) return [];
@@ -20,6 +22,18 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return (a.order || 0) - (b.order || 0);
         });
     });
+
+    // Modifier to enforce a 50ms delay on drag movement after activation (popup)
+    const movementDelayModifier = ({ transform }) => {
+        if (Date.now() - dragStartTime.current < 50) {
+            return {
+                ...transform,
+                x: 0,
+                y: 0,
+            };
+        }
+        return transform;
+    };
 
     // Sync local state with context when not dragging
     // We strictly avoid syncing IF we just dropped an item and are waiting for the async update to return
@@ -97,6 +111,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const plans = localPlans;
 
     const handleDragStart = (event) => {
+        dragStartTime.current = Date.now();
         const { active } = event;
         setActiveId(active.id);
 
@@ -230,6 +245,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     return (
         <DndContext
             sensors={sensors}
+            modifiers={[movementDelayModifier]}
             collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
