@@ -30,17 +30,17 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <div className="flex-1 overflow-y-auto min-h-0 -ml-1 pl-1 -mr-2 pr-2 scrollbar-hide">
-                <div className="flex justify-between items-start mb-6 w-full">
-                    <div className="min-w-0 pr-2">
+                <div className="flow-root mb-6 w-full">
+                    <div className={`float-right ml-2 mb-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${statusColors[plan.status] || statusColors['Tentative']}`}>
+                        {plan.status || 'Tentative'}
+                    </div>
+                    <div>
                         <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">
                             {plan.category || 'Plan'}
                         </span>
                         <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter break-words leading-none">
                             {plan.title || ''}
                         </h2>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border flex-shrink-0 ${statusColors[plan.status] || statusColors['Tentative']}`}>
-                        {plan.status || 'Tentative'}
                     </div>
                 </div>
 
