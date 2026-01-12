@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTrip } from '../../context/TripContext';
 import InstallPrompt from './InstallPrompt';
 import { formatDate } from '../../utils/date';
 
 const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
     const { trips, activeTrip, setActiveTripId } = useTrip();
+
+    useEffect(() => {
+        if (isOpen) {
+            const originalStyle = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    }, [isOpen]);
 
     return (
         <>
