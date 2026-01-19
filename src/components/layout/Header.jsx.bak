@@ -16,6 +16,11 @@ const Header = ({ onToggleSidebar, onEditTrip }) => {
                 <button id="theme-toggle-btn" onClick={toggleTheme} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100/20 transition-colors">
                     <i id="theme-icon" className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon text-slate-400'}`}></i>
                 </button>
+                {activeTrip && (
+                    <button onClick={() => onEditTrip(activeTrip)} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100/20 transition-colors">
+                        <i className="fa-solid fa-pen-to-square text-slate-400 hover:text-blue-500"></i>
+                    </button>
+                )}
             </div>
         </header>
     );

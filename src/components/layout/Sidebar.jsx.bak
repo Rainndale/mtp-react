@@ -47,29 +47,16 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                                     setActiveTripId(t.id);
                                     onClose();
                                 }}
-                                className={`p-4 rounded-lg cursor-pointer border transition-all flex items-center justify-between group ${
+                                className={`p-4 rounded-lg cursor-pointer border transition-all ${
                                     isSelected
                                         ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
                                         : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
                                 }`}
                             >
-                                <div className="min-w-0 flex-1 pr-2">
-                                    <h4 className="text-slate-900 dark:text-slate-100 font-bold truncate">{t.name || 'Untitled Trip'}</h4>
-                                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">
-                                        {formatDate(t.startDate)} - {formatDate(t.endDate)}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveTripId(t.id);
-                                        onOpenTripModal(t);
-                                        onClose();
-                                    }}
-                                    className="text-slate-400 p-2"
-                                >
-                                    <i className="fa-solid fa-pen-to-square"></i>
-                                </button>
+                                <h4 className="text-slate-900 dark:text-slate-100 font-bold truncate">{t.name || 'Untitled Trip'}</h4>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">
+                                    {formatDate(t.startDate)} - {formatDate(t.endDate)}
+                                </p>
                             </div>
                         );
                     })}
