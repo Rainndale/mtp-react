@@ -28,10 +28,24 @@ export const TripProvider = ({ children }) => {
 
     // Update Status Bar Color
     useEffect(() => {
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        if (metaThemeColor) {
-            metaThemeColor.setAttribute('content', isDarkMode ? '#1e293b' : '#ffffff');
-        }
+        const updateThemeColor = () => {
+            const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+            if (metaThemeColor) {
+                metaThemeColor.setAttribute('content', isDarkMode ? '#1e293b' : '#ffffff');
+            }
+        };
+
+        updateThemeColor();
+
+        // Re-apply on visibility change (fixes app switch glitch where OS reverts color)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                updateThemeColor();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isDarkMode]);
 
     // Toggle Theme
