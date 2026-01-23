@@ -190,9 +190,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             const isBelow = activeCenterY > overCenterY;
 
                             // Adjust target index based on geometry
-                            if (activeIndex < overIndex && !isBelow) {
-                                targetIndex = overIndex - 1;
-                            } else if (activeIndex > overIndex && isBelow) {
+                            // Logic simplifed to match visual ghost image (SortableContext) behavior
+                            // If dragging from outside (Migration), we want to insert AT the current position (overIndex)
+                            // if we are in the top half (pushing item down), or AFTER (overIndex + 1) if in bottom half.
+
+                            if (!isBelow) {
+                                targetIndex = overIndex;
+                            } else {
                                 targetIndex = overIndex + 1;
                             }
 
