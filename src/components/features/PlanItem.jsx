@@ -1,13 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import { clsx } from 'clsx';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 const PlanItem = ({ plan, onClick, isOverlay = false }) => {
-    const marqueeRef = useRef(null);
-    const containerRef = useRef(null);
-    const [isMarquee, setIsMarquee] = useState(false);
-
     // DnD Hooks - conditional if we are not the overlay
     const {
         attributes,
@@ -27,18 +23,6 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
         opacity: isDragging ? 0.3 : 1, // Visual cue for original item when dragging
     };
 
-    // Marquee check
-    useEffect(() => {
-        const checkMarquee = () => {
-            if (marqueeRef.current && containerRef.current) {
-                setIsMarquee(marqueeRef.current.scrollWidth > containerRef.current.clientWidth);
-            }
-        };
-        checkMarquee();
-        window.addEventListener('resize', checkMarquee);
-        return () => window.removeEventListener('resize', checkMarquee);
-    }, [plan.location]);
-
     const statusColors = {
         'Confirmed': 'bg-[#10b981]',
         'Tentative': 'bg-[#f59e0b]',
@@ -57,16 +41,8 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
                 <div className="flex items-center text-xs md:text-sm text-[var(--text-muted)] font-medium w-full overflow-hidden min-w-0">
                     <span className="whitespace-nowrap flex-shrink-0 mr-1">{plan.time || '--:--'} &middot;</span>
 
-                    <div ref={containerRef} className={`relative overflow-hidden flex-grow flex min-w-0 ${isMarquee ? 'marquee-container marquee-active' : ''}`}>
-                         <div ref={marqueeRef} className="marquee-content whitespace-nowrap">
-                             {plan.location || 'No location specified'}
-                         </div>
-                         {/* Duplicate for seamless loop if active */}
-                         {isMarquee && (
-                             <div className="marquee-content whitespace-nowrap pl-8" aria-hidden="true">
-                                 {plan.location || 'No location specified'}
-                             </div>
-                         )}
+                    <div className="truncate flex-grow">
+                        {plan.location || 'No location specified'}
                     </div>
                 </div>
             </div>
