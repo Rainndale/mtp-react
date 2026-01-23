@@ -153,6 +153,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             if (!targetDate) return;
 
+            // Determine if this is a migration (different day) based on ORIGINAL source
+            // This prevents "flicker" where the item conceptually moves to the new day in state
+            // and then immediately loses the "isMigration" status, reverting to standard reorder logic
+            const originalPlan = activeTrip.plans.find(p => p.id === activeId);
+            const isMigration = originalPlan && originalPlan.date !== targetDate;
+
             // If we are moving to a different day, or reordering within the same day
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
@@ -167,32 +173,36 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // 2. Move item if over another plan
                 if (overIndex !== -1) {
-                let targetIndex = overIndex;
+                    let targetIndex = overIndex;
 
-                const overElement = document.getElementById(overId);
-                const activeRect = active.rect.current?.translated;
+                    // Only apply geometry-aware logic for Migrations (Day A -> Day B)
+                    // For Same-Day reordering, standard arrayMove logic (swapping) feels more natural/fluid.
+                    if (isMigration) {
+                        const overElement = document.getElementById(overId);
+                        const activeRect = active.rect.current?.translated;
 
-                if (overElement && activeRect) {
-                    const overRect = overElement.getBoundingClientRect();
+                        if (overElement && activeRect) {
+                            const overRect = overElement.getBoundingClientRect();
 
-                    const activeCenterY = activeRect.top + activeRect.height / 2;
-                    const overCenterY = overRect.top + overRect.height / 2;
+                            const activeCenterY = activeRect.top + activeRect.height / 2;
+                            const overCenterY = overRect.top + overRect.height / 2;
 
-                    const isBelow = activeCenterY > overCenterY;
+                            const isBelow = activeCenterY > overCenterY;
 
-                    // Adjust target index based on geometry
-                    if (activeIndex < overIndex && !isBelow) {
-                        targetIndex = overIndex - 1;
-                    } else if (activeIndex > overIndex && isBelow) {
-                        targetIndex = overIndex + 1;
+                            // Adjust target index based on geometry
+                            if (activeIndex < overIndex && !isBelow) {
+                                targetIndex = overIndex - 1;
+                            } else if (activeIndex > overIndex && isBelow) {
+                                targetIndex = overIndex + 1;
+                            }
+
+                            // Ensure bounds
+                            if (targetIndex < 0) targetIndex = 0;
+                            if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
+                        }
                     }
 
-                    // Ensure bounds
-                    if (targetIndex < 0) targetIndex = 0;
-                    if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
-                }
-
-                return arrayMove(newPlans, activeIndex, targetIndex);
+                    return arrayMove(newPlans, activeIndex, targetIndex);
                 }
 
                 // 3. If over a Day header, ensure it's at the end of that day's list?
