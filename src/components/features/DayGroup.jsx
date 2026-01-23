@@ -51,6 +51,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
             `}
         >
             <div
+                id={date}
                 ref={setDragRef}
                 {...attributes}
                 {...listeners}
