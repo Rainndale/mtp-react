@@ -36,16 +36,6 @@ export const TripProvider = ({ children }) => {
         };
 
         updateThemeColor();
-
-        // Re-apply on visibility change (fixes app switch glitch where OS reverts color)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                updateThemeColor();
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isDarkMode]);
 
     // Toggle Theme
