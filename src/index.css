@@ -237,25 +237,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .drag-over-day .day-header { outline: 2px dashed var(--accent-blue) !important; outline-offset: -2px; }
 .drag-over-day { border: none !important; background: transparent !important; }
 
-/* Marquee specific styles */
-.marquee-container {
-    position: relative;
-    overflow: hidden;
-    flex-grow: 1;
-    display: flex; /* Prevent wrapping */
-    min-width: 0;
-}
-
-.marquee-content {
-    display: inline-block;
-    white-space: nowrap;
-}
-
-.marquee-active .marquee-content {
-    animation: marquee 12s linear infinite;
-    padding-right: 2rem;
-}
-
 #vibe-debugger { position: fixed; bottom: 12px; right: 12px; width: 10px; height: 10px; border-radius: 50%; z-index: 9999; opacity: 0.6; background: #22c55e; cursor: pointer; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.1); transition: background 0.2s; }
 #vibe-debugger.error { background: #ef4444; animation: glow 1s infinite alternate; }
 #vibe-debugger.locked { background: #06b6d4; }
