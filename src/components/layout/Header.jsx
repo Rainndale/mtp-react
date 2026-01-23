@@ -6,9 +6,9 @@ const Header = ({ onToggleSidebar, onEditTrip }) => {
 
     return (
         <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-[var(--card-bg)] border-b border-[var(--card-border)] z-50 px-4 md:px-8 flex items-center justify-between transition-colors duration-[400ms]">
-            {/* Status Bar Gap Fix (The Roof) */}
+            {/* Status Bar Gap Fix (The Roof) - Overlaps header by 1px to prevent hairline gaps */}
             <div
-                className="absolute bottom-full left-0 right-0 h-[50vh] bg-[var(--card-bg)] pointer-events-none transition-colors duration-[400ms]"
+                className="absolute bottom-[calc(100%-1px)] left-0 right-0 h-[50vh] bg-[var(--card-bg)] pointer-events-none transition-colors duration-[400ms]"
                 aria-hidden="true"
             />
 
