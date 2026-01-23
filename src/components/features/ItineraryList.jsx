@@ -167,7 +167,32 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // 2. Move item if over another plan
                 if (overIndex !== -1) {
-                    return arrayMove(newPlans, activeIndex, overIndex);
+                let targetIndex = overIndex;
+
+                const overElement = document.getElementById(overId);
+                const activeRect = active.rect.current?.translated;
+
+                if (overElement && activeRect) {
+                    const overRect = overElement.getBoundingClientRect();
+
+                    const activeCenterY = activeRect.top + activeRect.height / 2;
+                    const overCenterY = overRect.top + overRect.height / 2;
+
+                    const isBelow = activeCenterY > overCenterY;
+
+                    // Adjust target index based on geometry
+                    if (activeIndex < overIndex && !isBelow) {
+                        targetIndex = overIndex - 1;
+                    } else if (activeIndex > overIndex && isBelow) {
+                        targetIndex = overIndex + 1;
+                    }
+
+                    // Ensure bounds
+                    if (targetIndex < 0) targetIndex = 0;
+                    if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
+                }
+
+                return arrayMove(newPlans, activeIndex, targetIndex);
                 }
 
                 // 3. If over a Day header, ensure it's at the end of that day's list?
