@@ -45,12 +45,7 @@ export const TripProvider = ({ children }) => {
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('pageshow', handleVisibilityChange);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('pageshow', handleVisibilityChange);
-        };
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isDarkMode]);
 
     // Toggle Theme

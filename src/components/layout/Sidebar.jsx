@@ -25,12 +25,6 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
             <nav
                 className={`sidebar fixed inset-y-0 left-0 w-full md:w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
-                {/* Status Bar Gap Fix (Sidebar Roof) */}
-                <div
-                    className="absolute bottom-[calc(100%-1px)] left-0 right-0 h-[50vh] bg-white dark:bg-slate-900 pointer-events-none"
-                    aria-hidden="true"
-                />
-
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
                         <i className="fa-solid fa-earth-americas mr-3 text-blue-500"></i> My Journeys
