@@ -60,7 +60,7 @@ const Content = () => {
             />
 
             <PullToRefresh onRefresh={refreshTrips}>
-                <div className="pt-16 md:pt-20 px-0 md:px-8 w-full md:w-[97vw] mx-auto">
+                <div className="pt-16 md:pt-20 px-0 md:px-8 w-full max-w-4xl mx-auto">
                     {activeTrip && (
                         <div className="relative w-[95%] md:w-full mx-auto h-48 md:h-64 rounded-lg overflow-hidden mb-8 shadow-xl animate-fade-in">
                             <img src="./header-bg.jpg" alt="Travel" className="w-full h-full object-cover" />
