@@ -60,6 +60,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
 
     return (
         <div
+            id={plan.id}
             ref={setNodeRef}
             style={style}
             {...attributes}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
@@ -12,6 +13,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeId, setActiveId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
+    const [dragWidth, setDragWidth] = useState(null);
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
         if (!activeTrip?.plans) return [];
@@ -100,6 +102,16 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const { active } = event;
         setActiveId(active.id);
 
+        if (active.rect.current?.initial?.width) {
+            setDragWidth(active.rect.current.initial.width);
+        } else {
+             // Fallback if dnd-kit hasn't measured yet (e.g., fast interactions)
+             const node = document.getElementById(active.id);
+             if (node) {
+                 setDragWidth(node.getBoundingClientRect().width);
+             }
+        }
+
         // Check if it's a Day (active.id is a date string in 'YYYY-MM-DD' format usually, check against days array)
         if (days.includes(active.id)) {
             setActiveDay(active.id);
@@ -177,6 +189,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         setActiveId(null);
         setActivePlan(null);
         setActiveDay(null);
+        setDragWidth(null);
 
         if (!over) {
              setLocalPlans(activeTrip.plans); // Revert
@@ -256,22 +269,25 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 })}
             </div>
 
-            <DragOverlay dropAnimation={null} zIndex={100}>
-                {activeId ? (
-                    activeDay ? (
-                         <div className="w-[95%] md:w-[99%] max-w-4xl mx-auto bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
-                            <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
-                            <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(activeDay)}</h3>
-                        </div>
-                    ) : (
-                        activePlan && (
-                            <div className="w-[90.25%] md:w-[94.05%] max-w-4xl mx-auto">
-                                <PlanItem plan={activePlan} isOverlay />
+            {createPortal(
+                <DragOverlay dropAnimation={null} zIndex={100} style={{ width: dragWidth }}>
+                    {activeId ? (
+                        activeDay ? (
+                             <div className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
+                                <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
+                                <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(activeDay)}</h3>
                             </div>
+                        ) : (
+                            activePlan && (
+                                <div className="w-full">
+                                    <PlanItem plan={activePlan} isOverlay />
+                                </div>
+                            )
                         )
-                    )
-                ) : null}
-            </DragOverlay>
+                    ) : null}
+                </DragOverlay>,
+                document.body
+            )}
         </DndContext>
     );
 };
