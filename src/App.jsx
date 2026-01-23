@@ -6,11 +6,12 @@ import TripModal from './components/features/TripModal';
 import PlanModal from './components/features/PlanModal';
 import PlanViewModal from './components/features/PlanViewModal';
 import CinematicLoader from './components/ui/CinematicLoader';
+import PullToRefresh from './components/ui/PullToRefresh';
 import { TripProvider, useTrip } from './context/TripContext';
 import { formatDate } from './utils/date';
 
 const Content = () => {
-    const { activeTrip, isLoading } = useTrip();
+    const { activeTrip, isLoading, refreshTrips } = useTrip();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTripModalOpen, setIsTripModalOpen] = useState(false);
     const [tripToEdit, setTripToEdit] = useState(null);
@@ -58,26 +59,28 @@ const Content = () => {
                 onEditTrip={handleOpenTripModal}
             />
 
-            <div className="pt-16 md:pt-20 px-0 md:px-8 w-full md:w-[97vw] mx-auto">
-                {activeTrip && (
-                    <div className="relative w-[95%] md:w-full mx-auto h-48 md:h-64 rounded-lg overflow-hidden mb-8 shadow-xl animate-fade-in">
-                        <img src="./header-bg.jpg" alt="Travel" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-6 left-6 right-6">
-                            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic">{activeTrip.name}</h1>
-                            <p className="text-blue-200 font-medium text-sm md:text-base mt-1">
-                                <i className="fa-solid fa-calendar-days mr-2"></i>
-                                {formatDate(activeTrip.startDate)} — {formatDate(activeTrip.endDate)}
-                            </p>
+            <PullToRefresh onRefresh={refreshTrips}>
+                <div className="pt-16 md:pt-20 px-0 md:px-8 w-full md:w-[97vw] mx-auto">
+                    {activeTrip && (
+                        <div className="relative w-[95%] md:w-full mx-auto h-48 md:h-64 rounded-lg overflow-hidden mb-8 shadow-xl animate-fade-in">
+                            <img src="./header-bg.jpg" alt="Travel" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
+                            <div className="absolute bottom-6 left-6 right-6">
+                                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic">{activeTrip.name}</h1>
+                                <p className="text-blue-200 font-medium text-sm md:text-base mt-1">
+                                    <i className="fa-solid fa-calendar-days mr-2"></i>
+                                    {formatDate(activeTrip.startDate)} — {formatDate(activeTrip.endDate)}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                <ItineraryList
-                    onOpenPlanModal={handleOpenPlanModal}
-                    onEditPlan={handleViewPlan}
-                />
-            </div>
+                    <ItineraryList
+                        onOpenPlanModal={handleOpenPlanModal}
+                        onEditPlan={handleViewPlan}
+                    />
+                </div>
+            </PullToRefresh>
 
             <TripModal
                 isOpen={isTripModalOpen}
