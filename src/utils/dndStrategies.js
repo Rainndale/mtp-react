@@ -1,4 +1,4 @@
-import { closestCorners, pointerWithin } from '@dnd-kit/core';
+import { closestCorners, pointerWithin, rectIntersection } from '@dnd-kit/core';
 
 export const customCollisionDetection = (args) => {
     const { active, droppableContainers } = args;
@@ -24,5 +24,6 @@ export const customCollisionDetection = (args) => {
 
     // Default behavior for Plans (or anything else)
     // Plans can interact with both Days (to move to that day) and other Plans (to reorder)
-    return closestCorners(args);
+    // FIX: Changed from closestCorners to pointerWithin to prevent jumping to distant containers (like first day)
+    return pointerWithin(args);
 };

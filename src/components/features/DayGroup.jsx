@@ -59,7 +59,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 className={`
                     day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    sticky top-[48px] md:top-[56px] z-40
+                    ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
                 `}
             >
                 <div className="flex items-center">
