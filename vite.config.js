@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'Voyager | Premium Trip Planner',
         short_name: 'Voyager',
         description: 'Premium Offline Trip Planner',
-        theme_color: '#ffffff',
+        theme_color: '#f8fafc',
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',
