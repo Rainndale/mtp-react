@@ -259,13 +259,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             <DragOverlay dropAnimation={null} zIndex={100}>
                 {activeId ? (
                     activeDay ? (
-                         <div className="w-[95%] md:w-[99%] mx-auto bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
+                         <div className="w-[95%] md:w-[99%] max-w-4xl mx-auto bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
                             <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
                             <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(activeDay)}</h3>
                         </div>
                     ) : (
                         activePlan && (
-                            <div className="w-full max-w-[97vw]">
+                            <div className="w-[90.25%] md:w-[94.05%] max-w-4xl mx-auto">
                                 <PlanItem plan={activePlan} isOverlay />
                             </div>
                         )
