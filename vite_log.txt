@@ -7,3 +7,5 @@
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+5:49:24 PM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css
+5:49:43 PM [vite] hmr update /src/components/features/DayGroup.jsx, /src/index.css
