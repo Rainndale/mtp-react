@@ -52,8 +52,13 @@ html.dark {
 *::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
+html {
+    background-color: var(--card-bg);
+}
+
 body {
     background-color: var(--bg-color);
+    min-height: 100vh;
     color: var(--text-main);
     transition: background-color 0.4s ease, color 0.4s ease;
     -webkit-tap-highlight-color: transparent;
