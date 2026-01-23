@@ -183,27 +183,30 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                         if (overElement && activeRect) {
                             const overRect = overElement.getBoundingClientRect();
-
                             const activeCenterY = activeRect.top + activeRect.height / 2;
                             const overCenterY = overRect.top + overRect.height / 2;
-
                             const isBelow = activeCenterY > overCenterY;
 
-                            // Adjust target index based on geometry
-                            // Logic simplifed to match visual ghost image (SortableContext) behavior
-                            // If dragging from outside (Migration), we want to insert AT the current position (overIndex)
-                            // if we are in the top half (pushing item down), or AFTER (overIndex + 1) if in bottom half.
-
                             if (!isBelow) {
+                                // Top Half: Insert Before
                                 targetIndex = overIndex;
+                                // If dragging DOWN, removing the item shifts everything up, so we must compensate
+                                if (activeIndex < overIndex) {
+                                    targetIndex -= 1;
+                                }
                             } else {
-                                targetIndex = overIndex + 1;
+                                // Bottom Half: Insert After
+                                targetIndex = overIndex;
+                                // If dragging UP, we want to target the slot AFTER the item
+                                if (activeIndex > overIndex) {
+                                    targetIndex += 1;
+                                }
                             }
-
-                            // Ensure bounds
-                            if (targetIndex < 0) targetIndex = 0;
-                            if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
                         }
+
+                        // Ensure bounds
+                        if (targetIndex < 0) targetIndex = 0;
+                        if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
                     }
 
                     return arrayMove(newPlans, activeIndex, targetIndex);
