@@ -5,7 +5,10 @@ const Header = ({ onToggleSidebar, onEditTrip }) => {
     const { activeTrip, toggleTheme, isDarkMode } = useTrip();
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-[var(--card-bg)] border-b border-[var(--card-border)] z-50 px-4 md:px-8 flex items-center justify-between transition-colors duration-[400ms]">
+        <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-[var(--card-bg)] border-b border-t-0 border-[var(--card-border)] outline-none shadow-none z-50 px-4 md:px-8 flex items-center justify-between transition-colors duration-[400ms]">
+            {/* Status Bar Patch: Covers potential sub-pixel rendering gaps or system borders */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] -mt-[1px] bg-[var(--card-bg)] pointer-events-none transition-colors duration-[400ms]"></div>
+
             <button onClick={onToggleSidebar} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100/20 transition-colors">
                 <i className="fa-solid fa-bars-staggered text-xl text-blue-600"></i>
             </button>
