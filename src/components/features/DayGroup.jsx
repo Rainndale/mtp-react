@@ -69,11 +69,14 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* Header Wrapper with Droppable Ref */}
-            <div ref={setHeaderDropRef} className="relative">
+            {/* Header Wrapper */}
+            <div className="relative">
                 <div
                     id={date}
-                    ref={setDragRef}
+                    ref={(node) => {
+                        setDragRef(node);
+                        setHeaderDropRef(node);
+                    }}
                     {...attributes}
                     {...listeners}
                     onClick={() => toggleDayCollapse(activeTrip.id, date)}
@@ -82,7 +85,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                         day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                         w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
                         ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
-                        ${isOverHeader && !isDraggingDay ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
                     `}
                 >
                     <div className="flex items-center">
@@ -123,7 +125,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                         onClick={() => onAddPlan(date)}
                         className={`
                             h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed
-                            ${isOverFooter ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 text-slate-500 dark:text-slate-400'}
+                            border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 text-slate-500 dark:text-slate-400
                             rounded-lg text-sm font-medium cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors
                         `}
                     >
