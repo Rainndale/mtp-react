@@ -3,47 +3,7 @@
 > vite
 
 
-  VITE v5.4.21  ready in 404 ms
+  VITE v5.4.21  ready in 854 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-7:17:47 PM [vite] Pre-transform error: Failed to resolve import "../dev/DragDebugOverlay" from "src/components/features/ItineraryList.jsx". Does the file exist?
-7:17:48 PM [vite] Internal server error: Failed to resolve import "../dev/DragDebugOverlay" from "src/components/features/ItineraryList.jsx". Does the file exist?
-  Plugin: vite:import-analysis
-  File: /app/src/components/features/ItineraryList.jsx:10:31
-  25 |  import PlanItem from "./PlanItem";
-  26 |  import { customCollisionDetection } from "../../utils/dndStrategies";
-  27 |  import { dragDebugState } from "../dev/DragDebugOverlay";
-     |                                  ^
-  28 |  const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
-  29 |    _s();
-      at TransformPluginContext._formatError (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
-      at TransformPluginContext.error (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
-      at normalizeUrl (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
-      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-      at async file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
-      at async Promise.all (index 12)
-      at async TransformPluginContext.transform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
-      at async PluginContainer.transform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
-      at async loadAndTransform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
-      at async viteTransformMiddleware (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
-7:18:05 PM [vite] Internal server error: Failed to resolve import "../dev/DragDebugOverlay" from "src/components/features/ItineraryList.jsx". Does the file exist?
-  Plugin: vite:import-analysis
-  File: /app/src/components/features/ItineraryList.jsx:10:31
-  25 |  import PlanItem from "./PlanItem";
-  26 |  import { customCollisionDetection } from "../../utils/dndStrategies";
-  27 |  import { dragDebugState } from "../dev/DragDebugOverlay";
-     |                                  ^
-  28 |  const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
-  29 |    _s();
-      at TransformPluginContext._formatError (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
-      at TransformPluginContext.error (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
-      at normalizeUrl (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
-      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-      at async file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
-      at async Promise.all (index 12)
-      at async TransformPluginContext.transform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
-      at async PluginContainer.transform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
-      at async loadAndTransform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
-      at async viteTransformMiddleware (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
-7:18:26 PM [vite] hmr update /src/App.jsx, /src/index.css

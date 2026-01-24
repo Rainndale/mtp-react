@@ -22,12 +22,31 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
         data: { type: 'DAY', date }
     });
 
+    // Main Container Drop Zone (Fallback)
     const {
         setNodeRef: setDropRef,
         isOver
     } = useDroppable({
         id: date,
         data: { type: 'DAY', date }
+    });
+
+    // Explicit Header Drop Zone
+    const {
+        setNodeRef: setHeaderDropRef,
+        isOver: isOverHeader
+    } = useDroppable({
+        id: `header-${date}`,
+        data: { type: 'DAY_HEADER', date }
+    });
+
+    // Explicit Footer Drop Zone
+    const {
+        setNodeRef: setFooterDropRef,
+        isOver: isOverFooter
+    } = useDroppable({
+        id: `footer-${date}`,
+        data: { type: 'DAY_FOOTER', date }
     });
 
     // Determine if we should show the swap indicator
@@ -50,27 +69,31 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            <div
-                id={date}
-                ref={setDragRef}
-                {...attributes}
-                {...listeners}
-                onClick={() => toggleDayCollapse(activeTrip.id, date)}
-                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className={`
-                    day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
-                `}
-            >
-                <div className="flex items-center">
-                    <div>
-                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
-                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
+            {/* Header Wrapper with Droppable Ref */}
+            <div ref={setHeaderDropRef} className="relative">
+                <div
+                    id={date}
+                    ref={setDragRef}
+                    {...attributes}
+                    {...listeners}
+                    onClick={() => toggleDayCollapse(activeTrip.id, date)}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    className={`
+                        day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
+                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
+                        ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
+                        ${isOverHeader && !isDraggingDay ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                    `}
+                >
+                    <div className="flex items-center">
+                        <div>
+                            <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
+                            <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
+                        </div>
                     </div>
-                </div>
-                <div className="text-[var(--text-muted)]">
-                     <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
+                    <div className="text-[var(--text-muted)]">
+                         <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
+                    </div>
                 </div>
             </div>
 
@@ -96,8 +119,13 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                     </SortableContext>
 
                     <div
+                        ref={setFooterDropRef}
                         onClick={() => onAddPlan(date)}
-                        className="h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors"
+                        className={`
+                            h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed
+                            ${isOverFooter ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 text-slate-500 dark:text-slate-400'}
+                            rounded-lg text-sm font-medium cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors
+                        `}
                     >
                         Tap here to add new plan
                     </div>
