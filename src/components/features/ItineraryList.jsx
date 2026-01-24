@@ -136,27 +136,31 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             if (!activePlan) return;
 
             let targetDate = null;
-            let targetIndex = -1;
+
+            // Logic Branch Identification
+            let logicBranch = 'UNKNOWN';
 
             if (overType === 'PLAN') {
                 const overPlan = plans.find(p => p.id === overId);
                 if (overPlan) {
                     targetDate = overPlan.date;
-                    dragDebugState.action = 'HOVER_PLAN';
+                    logicBranch = 'PLAN_SWAP';
                 }
             } else if (overType === 'DAY_HEADER') {
                 targetDate = over.data.current.date;
-                dragDebugState.action = 'HOVER_HEADER';
+                logicBranch = 'HEADER_INSERT';
             } else if (overType === 'DAY_FOOTER') {
                 targetDate = over.data.current.date;
-                dragDebugState.action = 'HOVER_FOOTER';
+                logicBranch = 'FOOTER_INSERT';
             } else if (overType === 'DAY') {
                 targetDate = overId;
-                dragDebugState.action = 'HOVER_CONTAINER';
+                logicBranch = 'CONTAINER_FALLBACK';
             }
 
-            if (!targetDate) return;
+            dragDebugState.action = logicBranch;
             dragDebugState.targetDate = targetDate;
+
+            if (!targetDate) return;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
@@ -164,8 +168,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // 1. Always update the date first if needed (Migration)
                 if (newPlans[activeIndex].date !== targetDate) {
+                    logDragEvent('DATE CHANGE', { from: newPlans[activeIndex].date, to: targetDate, branch: logicBranch });
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
-                    logDragEvent('MIGRATED DATE', { from: prevPlans[activeIndex].date, to: targetDate });
                 }
 
                 // 2. Position Logic
@@ -173,6 +177,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     // Standard Sortable Swap
                     const overIndex = prevPlans.findIndex(p => p.id === overId);
                     if (activeIndex !== overIndex) {
+                        logDragEvent('PLAN SWAP', {
+                            activeId: activeId.substring(0,4),
+                            overId: overId.substring(0,4),
+                            activeIndex,
+                            overIndex
+                        });
                         return arrayMove(newPlans, activeIndex, overIndex);
                     }
                 } else if (overType === 'DAY_HEADER') {
@@ -184,12 +194,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     if (firstPlanIndex !== -1) {
                          // Insert BEFORE the first plan
+                         logDragEvent('HEADER: SPLICE BEFORE', { index: firstPlanIndex, targetDate });
                          newPlans.splice(firstPlanIndex, 0, movedItem);
-                         logDragEvent('HEADER INSERT', { index: firstPlanIndex });
                     } else {
                          // Day is empty (or just contained the moved item), just push it
-                         newPlans.push(movedItem); // Safer to find end? No, empty means 0.
-                         logDragEvent('HEADER INSERT (EMPTY)');
+                         logDragEvent('HEADER: PUSH (EMPTY)', { targetDate });
+                         newPlans.push(movedItem);
                     }
                     return newPlans;
 
@@ -208,11 +218,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     if (lastPlanIndex !== -1) {
                         // Insert AFTER the last plan
-                        newPlans.splice(lastPlanIndex + 1, 0, movedItem);
-                        logDragEvent('FOOTER INSERT', { index: lastPlanIndex + 1 });
+                        const insertIdx = lastPlanIndex + 1;
+                        logDragEvent('FOOTER: SPLICE AFTER', { lastIndex: lastPlanIndex, insertIdx, targetDate });
+                        newPlans.splice(insertIdx, 0, movedItem);
                     } else {
+                        logDragEvent('FOOTER: PUSH (EMPTY)', { targetDate });
                         newPlans.push(movedItem);
-                        logDragEvent('FOOTER INSERT (EMPTY)');
                     }
                     return newPlans;
                 }
@@ -226,6 +237,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
     const handleDragEnd = async (event) => {
         const { active, over } = event;
+        logDragEvent('DRAG END', { activeId: active.id, overId: over?.id });
+
         setActiveId(null);
         setActivePlan(null);
         setActiveDay(null);
