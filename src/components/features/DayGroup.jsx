@@ -31,13 +31,23 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
         data: { type: 'DAY', date }
     });
 
-    // Explicit Header Drop Zone
+    // Explicit Header Drop Zone (The Sticky UI Header)
     const {
         setNodeRef: setHeaderDropRef,
         isOver: isOverHeader
     } = useDroppable({
         id: `header-${date}`,
         data: { type: 'DAY_HEADER', date }
+    });
+
+    // Secondary Header Drop Zone (Invisible Gap Buffer)
+    // Catches drops in the space between the header and the first plan
+    const {
+        setNodeRef: setHeaderGapRef,
+        isOver: isOverHeaderGap
+    } = useDroppable({
+        id: `header-gap-${date}`,
+        data: { type: 'DAY_HEADER', date } // Same type triggers same logic
     });
 
     // Explicit Footer Drop Zone
@@ -107,8 +117,21 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                     marginBottom: isCollapsed ? 0 : 24 // space-y-6 equivalent
                 }}
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="overflow-hidden"
+                className="overflow-hidden relative" // Added relative for absolute positioning of buffer
             >
+                {/* Invisible Buffer Zone for Top Insertion */}
+                <div
+                    ref={setHeaderGapRef}
+                    className="absolute top-0 left-0 w-full h-6 z-10"
+                    style={{ pointerEvents: 'none' }} // Let clicks pass through, but DnD pointerWithin still works?
+                    // Wait, dnd-kit pointerWithin uses document.elementFromPoint usually? No, it uses Rects.
+                    // If pointerEvents is none, elementFromPoint skips it.
+                    // BUT dnd-kit's default sensors use event.target.
+                    // Collision detection uses Rects of ALL droppables.
+                    // So pointerEvents: none shouldn't affect `pointerWithin` collision detection!
+                    // It DOES prevent blocking clicks to underlying items (like collapse).
+                />
+
                 <div className="space-y-[18px] pt-4 pb-6 min-h-[50px]">
                     <SortableContext items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
                         {plans.map(plan => (
