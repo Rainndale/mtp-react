@@ -212,10 +212,20 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          const isOverFirstItem = overItem && dayPlans.length > 0 && dayPlans[0].id === overId;
                          if (isOverFirstItem) {
                              if (activeCenterY < overCenterY) {
+                                 // Top Half of First Item -> Force Start (0)
                                  dragDebugState.decision = "Migration - First Item - Top Half -> Force Start";
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
                                  const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
                                  newPlans.splice(firstDayIndex, 0, movedItem);
+                                 return newPlans;
+                             } else {
+                                 // Bottom Half of First Item -> Force Index 1 (After Start)
+                                 // NOTE: Standard arrayMove(from, 0) inserts BEFORE 0. We want AFTER 0.
+                                 dragDebugState.decision = "Migration - First Item - Bottom Half -> Force Index 1";
+                                 const [movedItem] = newPlans.splice(activeIndex, 1);
+                                 const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
+                                 // Insert at firstDayIndex + 1
+                                 newPlans.splice(firstDayIndex + 1, 0, movedItem);
                                  return newPlans;
                              }
                          }
@@ -224,10 +234,20 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          const isOverLastItem = overItem && dayPlans.length > 0 && dayPlans[dayPlans.length - 1].id === overId;
                          if (isOverLastItem) {
                              if (activeCenterY > overCenterY) {
+                                 // Bottom Half of Last Item -> Force End
                                  dragDebugState.decision = "Migration - Last Item - Bottom Half -> Force End";
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
                                  const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
                                  newPlans.splice(lastDayIndex + 1, 0, movedItem);
+                                 return newPlans;
+                             } else {
+                                 // Top Half of Last Item -> Force Index N-1 (Before End)
+                                 // Standard arrayMove might do this correctly, but let's be explicit to avoid ambiguity
+                                 dragDebugState.decision = "Migration - Last Item - Top Half -> Force Before End";
+                                 const [movedItem] = newPlans.splice(activeIndex, 1);
+                                 const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
+                                 // Insert at lastDayIndex (pushing the last item to lastDayIndex + 1)
+                                 newPlans.splice(lastDayIndex, 0, movedItem);
                                  return newPlans;
                              }
                          }
