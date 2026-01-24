@@ -154,28 +154,22 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // Case A: Hovering over the DAY Container directly (Top/Bottom Edge Case)
                 if (overType === 'DAY') {
-                    if (over.rect && active.rect.current?.translated) {
-                        const overRect = over.rect;
-                        const activeRect = active.rect.current.translated;
-                        const overCenterY = overRect.top + overRect.height / 2;
-                        const activeCenterY = activeRect.top + activeRect.height / 2;
+                    // Check if day is empty
+                    const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
 
-                        // Remove from old position
+                    // If Empty Day -> Always Index 0
+                    if (dayPlans.length === 0) {
                         const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                        if (activeCenterY < overCenterY) {
-                            // Top Half -> Insert at Start of Day
-                            const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
-                            const insertIndex = firstDayIndex === -1 ? newPlans.length : firstDayIndex;
-                            newPlans.splice(insertIndex, 0, movedItem);
-                        } else {
-                            // Bottom Half -> Insert at End of Day
-                            const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
-                            const insertIndex = lastDayIndex === -1 ? newPlans.length : lastDayIndex + 1;
-                            newPlans.splice(insertIndex, 0, movedItem);
-                        }
+                        newPlans.push(movedItem);
                         return newPlans;
                     }
+
+                    // If Not Empty -> Do NOT force strict Top/Bottom Half logic.
+                    // This avoids the regression where hovering the gap near the top/bottom
+                    // of a populated list forces the item to the absolute start/end, skipping middle slots.
+                    // We simply return the newPlans with the date updated (from Step 1)
+                    // and rely on the user to hover closer to a specific PLAN to trigger Case B for sorting.
+                    return newPlans;
                 }
 
                 // Case B: Hovering over another PLAN
