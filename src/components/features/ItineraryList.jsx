@@ -165,11 +165,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 let newPlans = [...prevPlans];
+                let changed = false;
 
                 // 1. Always update the date first if needed (Migration)
                 if (newPlans[activeIndex].date !== targetDate) {
                     logDragEvent('DATE CHANGE', { from: newPlans[activeIndex].date, to: targetDate, branch: logicBranch });
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
+                    changed = true;
                 }
 
                 // 2. Position Logic
@@ -183,7 +185,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             activeIndex,
                             overIndex
                         });
-                        return arrayMove(newPlans, activeIndex, overIndex);
+                        newPlans = arrayMove(newPlans, activeIndex, overIndex);
+                        changed = true;
                     }
                 } else if (overType === 'DAY_HEADER') {
                     // Explicit Header -> Insert at START of Day
@@ -201,7 +204,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          logDragEvent('HEADER: PUSH (EMPTY)', { targetDate });
                          newPlans.push(movedItem);
                     }
-                    return newPlans;
+                    changed = true;
 
                 } else if (overType === 'DAY_FOOTER') {
                     // Explicit Footer -> Insert at END of Day
@@ -225,10 +228,16 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                         logDragEvent('FOOTER: PUSH (EMPTY)', { targetDate });
                         newPlans.push(movedItem);
                     }
-                    return newPlans;
+                    changed = true;
                 }
 
-                // Fallback for container gaps if needed (optional, 'DAY' case)
+                if (changed) {
+                    const resultingOrder = newPlans
+                        .filter(p => p.date === targetDate)
+                        .map(p => p.id.substring(0,4));
+
+                    logDragEvent('RESULT STATE', { date: targetDate, order: resultingOrder });
+                }
 
                 return newPlans;
             });
