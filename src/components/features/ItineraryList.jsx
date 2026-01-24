@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
-import { getDaysArray, formatDate, formatDayDate } from '../../utils/date';
+import { getDaysArray, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
-import { dragDebugState } from '../dev/DragDebugOverlay';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -123,97 +122,113 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
-        // DEBUG LOGGING
-        dragDebugState.activeId = activeId;
-        dragDebugState.overId = overId;
-        dragDebugState.activeType = activeType;
-        dragDebugState.overType = overType;
-        dragDebugState.timestamp = Date.now();
-
         // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
 
-            const sourceDate = activePlan.date;
             let targetDate = null;
+            let targetIndex = -1;
 
-            // Determine Target Date based on what we are hovering
-            if (overType === 'DAY') {
-                targetDate = overId;
-            } else if (overType === 'PLAN') {
+            if (overType === 'PLAN') {
                 const overPlan = plans.find(p => p.id === overId);
-                if (overPlan) targetDate = overPlan.date;
+                if (overPlan) {
+                    targetDate = overPlan.date;
+                }
+            } else if (overType === 'DAY') {
+                targetDate = overId;
             }
 
             if (!targetDate) return;
-
-            const originalPlan = activeTrip.plans.find(p => p.id === activeId);
-            const isMigration = originalPlan && originalPlan.date !== targetDate;
-            dragDebugState.isMigration = isMigration;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 let newPlans = [...prevPlans];
 
-                // --- STATE A: MIGRATION (Inter-Day) ---
-                if (isMigration) {
-                    // Update the date immediately so it 'belongs' to the new list logically
-                    if (newPlans[activeIndex].date !== targetDate) {
-                        newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
-                    }
-
-                    // Calculate Insertion Logic using Geometry
-                    if (overType === 'PLAN') {
-                        const overRect = over.rect;
-                        const activeRect = active.rect.current.translated;
-
-                        if (overRect && activeRect) {
-                            const overCenterY = overRect.top + overRect.height / 2;
-                            const activeCenterY = activeRect.top + activeRect.height / 2;
-                            const isBelow = activeCenterY > overCenterY;
-
-                            const overIndex = prevPlans.findIndex(p => p.id === overId);
-
-                            // If inserting BELOW, we want to target index + 1
-                            // If inserting ABOVE, we want to target index
-                            // arrayMove handles the shift, but we need to feed it the correct "visual" target index
-                            // Since the item is ALREADY in the array (at activeIndex), arrayMove treats it as a move.
-
-                            // Use the SPLICE approach to ensure exact insertion
-                            // 1. Remove from array completely (from its old position)
-                            // 2. Insert at calculated index relative to the NEW array state
-
-                            const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                            // Recalculate overIndex in the reduced array
-                            const adjustedOverIndex = newPlans.findIndex(p => p.id === overId);
-
-                            const insertIndex = isBelow ? adjustedOverIndex + 1 : adjustedOverIndex;
-
-                            newPlans.splice(insertIndex, 0, movedItem);
-                            return newPlans;
-                        }
-                    }
-
-                    if (overType === 'DAY') {
-                         // Empty day or container hover -> Move to end if empty, else do nothing (wait for plan hover)
-                         const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
-                         if (dayPlans.length === 0) {
-                             const [movedItem] = newPlans.splice(activeIndex, 1);
-                             newPlans.push(movedItem);
-                             return newPlans;
-                         }
-                    }
-
-                    return newPlans;
+                // 1. Always update the date first if needed (Migration)
+                if (newPlans[activeIndex].date !== targetDate) {
+                    newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
-                // --- STATE B: SAME DAY REORDER ---
-                // Standard arrayMove is sufficient here
-                const overIndex = prevPlans.findIndex(p => p.id === overId);
-                if (overIndex !== -1 && activeIndex !== overIndex) {
-                     return arrayMove(newPlans, activeIndex, overIndex);
+                // 2. Position Logic
+                if (overType === 'PLAN') {
+                    // Standard Sortable Swap: Just swap with the item we are hovering
+                    const overIndex = prevPlans.findIndex(p => p.id === overId);
+                    if (activeIndex !== overIndex) {
+                        return arrayMove(newPlans, activeIndex, overIndex);
+                    }
+                } else if (overType === 'DAY') {
+                    // Handle dropping on the Day Container (Header or Footer)
+                    const overRect = over.rect; // The Day Container Rect
+                    const activeRect = active.rect.current.translated; // Use translated to know where finger is
+
+                    if (overRect && activeRect) {
+                        // Calculate position relative to container
+                        const isTop = activeRect.top < overRect.top + 60; // Approx header height
+                        const isBottom = activeRect.top > overRect.top + overRect.height - 60; // Approx footer height
+
+                        // Get all plans for this target day
+                        const dayPlans = newPlans.filter(p => p.date === targetDate);
+
+                        // We need to move the item to the correct spot in the global array
+                        // But since we already updated the date in step 1, it is conceptually "in" the day
+                        // We just need to reorder it to the start or end of that day's chunk.
+
+                        // Remove from current position
+                        const [movedItem] = newPlans.splice(activeIndex, 1);
+
+                        // Find where the day's plans start in the global array (after splice)
+                        // Note: We need to find the index of the first plan of this day
+                        const firstPlanIndex = newPlans.findIndex(p => p.date === targetDate);
+                        // And the last plan of this day
+                        // We can filter to get count, or just iterate.
+                        // Actually, simplified approach:
+                        // If Top -> Insert before the first plan of that day
+                        // If Bottom (or default) -> Insert after the last plan of that day
+
+                        if (dayPlans.length === 0) {
+                            // Empty day? Just push it (it was removed, now push back)
+                             newPlans.push(movedItem); // This puts it at end of global array? No, bad for sorting.
+                             // Actually, strict day order doesn't matter for display if we filter by date,
+                             // but it matters if we want to keep array clean.
+                             // Let's just find the index of the Next Day's first plan and insert before it?
+                             // Or just push to end of array if it's the last day.
+
+                             // Safer: Sort the whole array by date/order at the end? No, that kills drag.
+
+                             // Let's use simpler logic:
+                             // Just append for now if empty.
+                             newPlans.push(movedItem);
+                        } else {
+                            if (isTop) {
+                                // Find index of first plan in this day
+                                if (firstPlanIndex !== -1) {
+                                    newPlans.splice(firstPlanIndex, 0, movedItem);
+                                } else {
+                                     // Fallback
+                                     newPlans.push(movedItem);
+                                }
+                            } else {
+                                // Bottom or Middle-of-container gap
+                                // Find index of last plan in this day
+                                // We can find the LAST index of a plan with this date
+                                let lastPlanIndex = -1;
+                                for (let i = newPlans.length - 1; i >= 0; i--) {
+                                    if (newPlans[i].date === targetDate) {
+                                        lastPlanIndex = i;
+                                        break;
+                                    }
+                                }
+
+                                if (lastPlanIndex !== -1) {
+                                    newPlans.splice(lastPlanIndex + 1, 0, movedItem);
+                                } else {
+                                    newPlans.push(movedItem);
+                                }
+                            }
+                        }
+                        return newPlans;
+                    }
                 }
 
                 return newPlans;
