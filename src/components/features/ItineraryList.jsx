@@ -178,38 +178,40 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     // Only apply geometry-aware logic for Migrations (Day A -> Day B)
                     // For Same-Day reordering, standard arrayMove logic (swapping) feels more natural/fluid.
                     if (isMigration) {
-                        const overElement = document.getElementById(overId);
-                        const activeRect = active.rect.current?.translated;
+                        // For migrations, we use a robust "Filter + Insert" strategy to avoid index shifting confusion.
+                        const activeItem = newPlans.find(p => p.id === activeId);
+                        const plansFiltered = newPlans.filter(p => p.id !== activeId);
+                        const overIndexFiltered = plansFiltered.findIndex(p => p.id === overId);
 
-                        if (overElement && activeRect) {
-                            const overRect = overElement.getBoundingClientRect();
-                            const activeCenterY = activeRect.top + activeRect.height / 2;
-                            const overCenterY = overRect.top + overRect.height / 2;
-                            const isBelow = activeCenterY > overCenterY;
+                        if (overIndexFiltered !== -1 && activeItem) {
+                            let insertIndex = overIndexFiltered;
 
-                            if (!isBelow) {
-                                // Top Half: Insert Before
-                                targetIndex = overIndex;
-                                // If dragging DOWN, removing the item shifts everything up, so we must compensate
-                                if (activeIndex < overIndex) {
-                                    targetIndex -= 1;
-                                }
-                            } else {
-                                // Bottom Half: Insert After
-                                targetIndex = overIndex;
-                                // If dragging UP, we want to target the slot AFTER the item
-                                if (activeIndex > overIndex) {
-                                    targetIndex += 1;
+                            const overElement = document.getElementById(overId);
+                            const activeRect = active.rect.current?.translated;
+
+                            if (overElement && activeRect) {
+                                const overRect = overElement.getBoundingClientRect();
+                                const activeCenterY = activeRect.top + activeRect.height / 2;
+                                const overCenterY = overRect.top + overRect.height / 2;
+                                const isBelow = activeCenterY > overCenterY;
+
+                                // Top Half: Insert Before (index stays same)
+                                // Bottom Half: Insert After (index + 1)
+                                if (isBelow) {
+                                    insertIndex += 1;
                                 }
                             }
-                        }
 
-                        // Ensure bounds
-                        if (targetIndex < 0) targetIndex = 0;
-                        if (targetIndex > newPlans.length - 1) targetIndex = newPlans.length - 1;
+                            // Reconstruct the array
+                            return [
+                                ...plansFiltered.slice(0, insertIndex),
+                                activeItem,
+                                ...plansFiltered.slice(insertIndex)
+                            ];
+                        }
                     }
 
-                    return arrayMove(newPlans, activeIndex, targetIndex);
+                    return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
                 // 3. If over a Day header, ensure it's at the end of that day's list?
