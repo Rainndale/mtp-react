@@ -261,6 +261,15 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeIdStr = active.id;
         const overIdStr = over.id;
 
+        // Strict Drop Enforcement: Cancel if dropping on Header or Footer
+        const overType = over.data.current?.type;
+        if (overType === 'DAY_HEADER' || overType === 'DAY_FOOTER') {
+             logDragEvent('CANCEL: DROP ON HEADER/FOOTER', { type: overType });
+             // Revert to original state (Cancel the action)
+             setLocalPlans(activeTrip.plans);
+             return;
+        }
+
         // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
             if (days.includes(overIdStr) && activeIdStr !== overIdStr) {
