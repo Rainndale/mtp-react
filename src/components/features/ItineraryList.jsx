@@ -7,6 +7,7 @@ import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSenso
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
+import { dragDebugState } from '../dev/DragDebugOverlay';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -122,6 +123,14 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
+        // DEBUG LOGGING
+        dragDebugState.activeId = activeId;
+        dragDebugState.overId = overId;
+        dragDebugState.activeType = activeType;
+        dragDebugState.overType = overType;
+        dragDebugState.timestamp = Date.now();
+
+        // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
@@ -129,6 +138,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             const sourceDate = activePlan.date;
             let targetDate = null;
 
+            // Determine Target Date based on what we are hovering
             if (overType === 'DAY') {
                 targetDate = overId;
             } else if (overType === 'PLAN') {
@@ -140,67 +150,70 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             const originalPlan = activeTrip.plans.find(p => p.id === activeId);
             const isMigration = originalPlan && originalPlan.date !== targetDate;
+            dragDebugState.isMigration = isMigration;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 let newPlans = [...prevPlans];
 
-                // 1. Update Date if changed (Handling DAY hover specifically)
-                if (sourceDate !== targetDate) {
-                    newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
-                }
-
-                // 2. Sorting Logic
-
-                // Case A: Hovering over the DAY Container directly (Top/Bottom Edge Case)
-                if (overType === 'DAY') {
-                    // Check if day is empty
-                    const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
-
-                    // If Empty Day -> Always Index 0
-                    if (dayPlans.length === 0) {
-                        const [movedItem] = newPlans.splice(activeIndex, 1);
-                        newPlans.push(movedItem);
-                        return newPlans;
+                // --- STATE A: MIGRATION (Inter-Day) ---
+                if (isMigration) {
+                    // Update the date immediately so it 'belongs' to the new list logically
+                    if (newPlans[activeIndex].date !== targetDate) {
+                        newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                     }
 
-                    // If Not Empty -> Do NOT force strict Top/Bottom Half logic.
-                    return newPlans;
-                }
+                    // Calculate Insertion Logic using Geometry
+                    if (overType === 'PLAN') {
+                        const overRect = over.rect;
+                        const activeRect = active.rect.current.translated;
 
-                // Case B: Hovering over another PLAN
-                const overIndex = prevPlans.findIndex(p => p.id === overId);
+                        if (overRect && activeRect) {
+                            const overCenterY = overRect.top + overRect.height / 2;
+                            const activeCenterY = activeRect.top + activeRect.height / 2;
+                            const isBelow = activeCenterY > overCenterY;
 
-                if (overIndex !== -1) {
-                    // MIGRATION FIX (Inter-Day):
-                    // Use "Filter and Splice" strategy to ensure visual accuracy when moving between days.
-                    // This bypasses arrayMove's index shifting logic which can be confusing during cross-list drag.
-                    if (isMigration && over.rect && active.rect.current?.translated) {
-                         const overRect = over.rect; // dnd-kit rect
-                         const activeRect = active.rect.current.translated;
-                         const overCenterY = overRect.top + overRect.height / 2;
-                         const activeCenterY = activeRect.top + activeRect.height / 2;
-                         const isBelow = activeCenterY > overCenterY;
+                            const overIndex = prevPlans.findIndex(p => p.id === overId);
 
-                         // 1. Remove active item from list (to get clean target indices)
-                         const activeItem = newPlans[activeIndex];
-                         const remainingPlans = newPlans.filter(p => p.id !== activeId);
+                            // If inserting BELOW, we want to target index + 1
+                            // If inserting ABOVE, we want to target index
+                            // arrayMove handles the shift, but we need to feed it the correct "visual" target index
+                            // Since the item is ALREADY in the array (at activeIndex), arrayMove treats it as a move.
 
-                         // 2. Find the index of the item we are hovering over in the CLEAN list
-                         const visualOverIndex = remainingPlans.findIndex(p => p.id === overId);
+                            // Use the SPLICE approach to ensure exact insertion
+                            // 1. Remove from array completely (from its old position)
+                            // 2. Insert at calculated index relative to the NEW array state
 
-                         if (visualOverIndex !== -1) {
-                             // 3. Determine Insertion Index
-                             // If Below: Insert AFTER the target (index + 1)
-                             // If Above: Insert AT the target (index)
-                             const insertIndex = isBelow ? visualOverIndex + 1 : visualOverIndex;
+                            const [movedItem] = newPlans.splice(activeIndex, 1);
 
-                             remainingPlans.splice(insertIndex, 0, activeItem);
-                             return remainingPlans;
+                            // Recalculate overIndex in the reduced array
+                            const adjustedOverIndex = newPlans.findIndex(p => p.id === overId);
+
+                            const insertIndex = isBelow ? adjustedOverIndex + 1 : adjustedOverIndex;
+
+                            newPlans.splice(insertIndex, 0, movedItem);
+                            return newPlans;
+                        }
+                    }
+
+                    if (overType === 'DAY') {
+                         // Empty day or container hover -> Move to end if empty, else do nothing (wait for plan hover)
+                         const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
+                         if (dayPlans.length === 0) {
+                             const [movedItem] = newPlans.splice(activeIndex, 1);
+                             newPlans.push(movedItem);
+                             return newPlans;
                          }
                     }
 
-                    return arrayMove(newPlans, activeIndex, overIndex);
+                    return newPlans;
+                }
+
+                // --- STATE B: SAME DAY REORDER ---
+                // Standard arrayMove is sufficient here
+                const overIndex = prevPlans.findIndex(p => p.id === overId);
+                if (overIndex !== -1 && activeIndex !== overIndex) {
+                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
                 return newPlans;
@@ -223,6 +236,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeIdStr = active.id;
         const overIdStr = over.id;
 
+        // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
             if (days.includes(overIdStr) && activeIdStr !== overIdStr) {
                  const sourceDate = activeIdStr;
@@ -247,8 +261,9 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return;
         }
 
+        // Handle Plan Finalization
+        // Normalize Order
         const finalPlans = [...localPlans];
-
         days.forEach(day => {
             const dayPlans = finalPlans.filter(p => p.date === day);
             dayPlans.forEach((p, idx) => {
