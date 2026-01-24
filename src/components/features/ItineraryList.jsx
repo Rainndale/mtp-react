@@ -15,8 +15,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
 
-    // Track pointer Y for precise insertion logic during migrations
-    const currentPointerY = useRef(0);
+    // Track drag direction for robust Edge-to-Center sorting logic
+    const lastActiveY = useRef(0);
 
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
@@ -38,7 +38,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
     }, [activeTrip, activeId]);
 
-    // Lock body scroll during drag and track pointer position
+    // Lock body scroll during drag
     React.useEffect(() => {
         const preventScroll = (e) => {
             if (activeId) {
@@ -46,33 +46,17 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             }
         };
 
-        const handlePointerMove = (e) => {
-            // Support both MouseEvent and TouchEvent
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                 currentPointerY.current = e.changedTouches[0].clientY;
-            } else {
-                 currentPointerY.current = e.clientY;
-            }
-        };
-
         if (activeId) {
             document.addEventListener('touchmove', preventScroll, { passive: false });
             document.body.style.touchAction = 'none';
-            // Use pointermove to track cursor globally
-            window.addEventListener('pointermove', handlePointerMove);
-            window.addEventListener('touchmove', handlePointerMove); // Fallback for some mobile
         } else {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
-            window.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('touchmove', handlePointerMove);
         }
 
         return () => {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
-            window.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('touchmove', handlePointerMove);
         };
     }, [activeId]);
 
@@ -119,6 +103,11 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
              }
         }
 
+        // Initialize lastActiveY
+        if (active.rect.current?.translated) {
+            lastActiveY.current = active.rect.current.translated.top;
+        }
+
         if (days.includes(active.id)) {
             setActiveDay(active.id);
             setActivePlan(null);
@@ -160,6 +149,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             const originalPlan = activeTrip.plans.find(p => p.id === activeId);
             const isMigration = originalPlan && originalPlan.date !== targetDate;
 
+            // Calculate drag direction
+            const activeRect = active.rect.current.translated;
+            const currentY = activeRect ? activeRect.top : 0;
+            const isMovingDown = currentY > lastActiveY.current;
+            if (activeRect) lastActiveY.current = currentY;
+
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
@@ -181,16 +176,27 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                         if (overIndexFiltered !== -1 && activeItem) {
                             let insertIndex = overIndexFiltered;
 
-                            const overElement = document.getElementById(overId);
-                            // Use tracked pointerY instead of activeRect center
-                            const pointerY = currentPointerY.current;
+                            // Use Edge-to-Center logic for robust sorting
+                            // If moving DOWN: We want to insert AFTER as soon as our BOTTOM crosses the target's CENTER.
+                            // If moving UP: We want to insert BEFORE as soon as our TOP crosses the target's CENTER.
+                            // This removes bias caused by grab offsets or item height differences (e.g. scale effects).
 
-                            if (overElement && pointerY > 0) {
-                                const overRect = overElement.getBoundingClientRect();
+                            if (activeRect && over.rect) {
+                                const overRect = over.rect; // dnd-kit provided rect
                                 const overCenterY = overRect.top + overRect.height / 2;
 
-                                // Simple logic: Above center -> Insert Before; Below center -> Insert After
-                                const isBelow = pointerY > overCenterY;
+                                let isBelow = false;
+
+                                if (isMovingDown) {
+                                    // Moving Down: Check if our Bottom is past the Center
+                                    const activeBottom = activeRect.top + activeRect.height;
+                                    isBelow = activeBottom > overCenterY;
+                                } else {
+                                    // Moving Up: Check if our Top is NOT yet past the Center (i.e., we are below Center)
+                                    // We want "Before" (isBelow=false) if Top < Center.
+                                    // So we want "After" (isBelow=true) if Top > Center.
+                                    isBelow = activeRect.top > overCenterY;
+                                }
 
                                 if (isBelow) {
                                     insertIndex += 1;
@@ -219,6 +225,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         setActivePlan(null);
         setActiveDay(null);
         setDragWidth(null);
+        lastActiveY.current = 0;
 
         if (!over) {
              setLocalPlans(activeTrip.plans);
