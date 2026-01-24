@@ -154,11 +154,46 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // 2. Sorting Logic
                 if (overIndex !== -1) {
-                    // Standard dnd-kit behavior:
-                    // If moving to a new list (Inter-day), we just insert it.
-                    // If moving in same list (Intra-day), we just move it.
-                    // The "shift" and "gap" are handled visually by SortableContext using the order in 'newPlans'.
-                    // By updating the array order here, dnd-kit will naturally animate the gap at the new index.
+                    // EDGE CASE FIX FOR MIGRATION (Inter-Day):
+
+                    if (isMigration && over.rect && active.rect.current?.translated) {
+                         const overRect = over.rect; // dnd-kit rect
+                         const activeRect = active.rect.current.translated;
+                         const overCenterY = overRect.top + overRect.height / 2;
+                         const activeCenterY = activeRect.top + activeRect.height / 2;
+
+                         const overItem = newPlans.find(p => p.id === overId);
+
+                         // Filter for VISUAL order items only (excluding the dragged item)
+                         // This is crucial because 'newPlans' already has the dragged item in it (due to date update),
+                         // so simply checking first/last of 'dayPlans' would compare the dragged item against itself or give wrong bounds.
+                         const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
+
+                         // Check First Item Edge Case
+                         const isOverFirstItem = overItem && dayPlans.length > 0 && dayPlans[0].id === overId;
+                         if (isOverFirstItem) {
+                             // If dragging above the first item's center, force move to START
+                             if (activeCenterY < overCenterY) {
+                                 const [movedItem] = newPlans.splice(activeIndex, 1);
+                                 // Re-calculate start index in the FULL array (filtering only by date)
+                                 const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
+                                 newPlans.splice(firstDayIndex, 0, movedItem);
+                                 return newPlans;
+                             }
+                         }
+
+                         // Check Last Item Edge Case
+                         const isOverLastItem = overItem && dayPlans.length > 0 && dayPlans[dayPlans.length - 1].id === overId;
+                         if (isOverLastItem) {
+                             // If dragging below the last item's center, force move to END
+                             if (activeCenterY > overCenterY) {
+                                 const [movedItem] = newPlans.splice(activeIndex, 1);
+                                 const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
+                                 newPlans.splice(lastDayIndex + 1, 0, movedItem);
+                                 return newPlans;
+                             }
+                         }
+                    }
 
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
