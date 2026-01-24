@@ -7,6 +7,7 @@ import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSenso
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
+import { dragDebugState } from '../dev/DragDebugOverlay';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -122,6 +123,26 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
+        // DEBUG LOGGING
+        dragDebugState.activeId = activeId;
+        dragDebugState.overId = overId;
+        dragDebugState.activeType = activeType;
+        dragDebugState.overType = overType;
+        dragDebugState.timestamp = Date.now();
+        if (active.rect.current?.translated) {
+            dragDebugState.activeRect = {
+                top: Math.round(active.rect.current.translated.top),
+                bottom: Math.round(active.rect.current.translated.top + active.rect.current.translated.height)
+            };
+        }
+        if (over.rect) {
+            dragDebugState.overRect = {
+                top: Math.round(over.rect.top),
+                bottom: Math.round(over.rect.top + over.rect.height),
+                height: Math.round(over.rect.height)
+            };
+        }
+
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
@@ -140,6 +161,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             const originalPlan = activeTrip.plans.find(p => p.id === activeId);
             const isMigration = originalPlan && originalPlan.date !== targetDate;
+            dragDebugState.isMigration = isMigration;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
@@ -159,16 +181,14 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     // If Empty Day -> Always Index 0
                     if (dayPlans.length === 0) {
+                        dragDebugState.decision = "Day Container - Empty Day -> Index 0";
                         const [movedItem] = newPlans.splice(activeIndex, 1);
                         newPlans.push(movedItem);
                         return newPlans;
                     }
 
                     // If Not Empty -> Do NOT force strict Top/Bottom Half logic.
-                    // This avoids the regression where hovering the gap near the top/bottom
-                    // of a populated list forces the item to the absolute start/end, skipping middle slots.
-                    // We simply return the newPlans with the date updated (from Step 1)
-                    // and rely on the user to hover closer to a specific PLAN to trigger Case B for sorting.
+                    dragDebugState.decision = "Day Container - Populated -> Defer to Plan Hover";
                     return newPlans;
                 }
 
@@ -192,6 +212,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          const isOverFirstItem = overItem && dayPlans.length > 0 && dayPlans[0].id === overId;
                          if (isOverFirstItem) {
                              if (activeCenterY < overCenterY) {
+                                 dragDebugState.decision = "Migration - First Item - Top Half -> Force Start";
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
                                  const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
                                  newPlans.splice(firstDayIndex, 0, movedItem);
@@ -203,6 +224,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          const isOverLastItem = overItem && dayPlans.length > 0 && dayPlans[dayPlans.length - 1].id === overId;
                          if (isOverLastItem) {
                              if (activeCenterY > overCenterY) {
+                                 dragDebugState.decision = "Migration - Last Item - Bottom Half -> Force End";
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
                                  const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
                                  newPlans.splice(lastDayIndex + 1, 0, movedItem);
@@ -211,6 +233,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          }
                     }
 
+                    dragDebugState.decision = "Standard ArrayMove";
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
