@@ -143,46 +143,19 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
+                const overIndex = prevPlans.findIndex(p => p.id === overId);
+
                 let newPlans = [...prevPlans];
 
-                // 1. Update Date if changed (Handling DAY hover specifically)
+                // 1. Update Date if changed
                 if (sourceDate !== targetDate) {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
                 // 2. Sorting Logic
-
-                // Case A: Hovering over the DAY Container directly (Top/Bottom Edge Case)
-                if (overType === 'DAY') {
-                    if (over.rect && active.rect.current?.translated) {
-                        const overRect = over.rect;
-                        const activeRect = active.rect.current.translated;
-                        const overCenterY = overRect.top + overRect.height / 2;
-                        const activeCenterY = activeRect.top + activeRect.height / 2;
-
-                        // Remove from old position
-                        const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                        if (activeCenterY < overCenterY) {
-                            // Top Half -> Insert at Start of Day
-                            const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
-                            const insertIndex = firstDayIndex === -1 ? newPlans.length : firstDayIndex;
-                            newPlans.splice(insertIndex, 0, movedItem);
-                        } else {
-                            // Bottom Half -> Insert at End of Day
-                            const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
-                            const insertIndex = lastDayIndex === -1 ? newPlans.length : lastDayIndex + 1;
-                            newPlans.splice(insertIndex, 0, movedItem);
-                        }
-                        return newPlans;
-                    }
-                }
-
-                // Case B: Hovering over another PLAN
-                const overIndex = prevPlans.findIndex(p => p.id === overId);
-
                 if (overIndex !== -1) {
                     // EDGE CASE FIX FOR MIGRATION (Inter-Day):
+
                     if (isMigration && over.rect && active.rect.current?.translated) {
                          const overRect = over.rect; // dnd-kit rect
                          const activeRect = active.rect.current.translated;
@@ -192,13 +165,17 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          const overItem = newPlans.find(p => p.id === overId);
 
                          // Filter for VISUAL order items only (excluding the dragged item)
+                         // This is crucial because 'newPlans' already has the dragged item in it (due to date update),
+                         // so simply checking first/last of 'dayPlans' would compare the dragged item against itself or give wrong bounds.
                          const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
 
                          // Check First Item Edge Case
                          const isOverFirstItem = overItem && dayPlans.length > 0 && dayPlans[0].id === overId;
                          if (isOverFirstItem) {
+                             // If dragging above the first item's center, force move to START
                              if (activeCenterY < overCenterY) {
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
+                                 // Re-calculate start index in the FULL array (filtering only by date)
                                  const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
                                  newPlans.splice(firstDayIndex, 0, movedItem);
                                  return newPlans;
@@ -208,6 +185,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          // Check Last Item Edge Case
                          const isOverLastItem = overItem && dayPlans.length > 0 && dayPlans[dayPlans.length - 1].id === overId;
                          if (isOverLastItem) {
+                             // If dragging below the last item's center, force move to END
                              if (activeCenterY > overCenterY) {
                                  const [movedItem] = newPlans.splice(activeIndex, 1);
                                  const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
