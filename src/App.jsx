@@ -7,7 +7,6 @@ import PlanModal from './components/features/PlanModal';
 import PlanViewModal from './components/features/PlanViewModal';
 import CinematicLoader from './components/ui/CinematicLoader';
 import PullToRefresh from './components/ui/PullToRefresh';
-import DragDebugOverlay from './components/dev/DragDebugOverlay';
 import { TripProvider, useTrip } from './context/TripContext';
 import { formatDate } from './utils/date';
 
@@ -102,8 +101,6 @@ const Content = () => {
                 plan={planToView}
                 onEdit={handleEditPlanFromView}
             />
-
-            <DragDebugOverlay />
         </div>
     );
 };

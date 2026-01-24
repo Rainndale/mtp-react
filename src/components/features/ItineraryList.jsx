@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate, formatDayDate } from '../../utils/date';
@@ -7,7 +7,6 @@ import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSenso
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
-import { dragDebugState } from '../dev/DragDebugOverlay';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -123,26 +122,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
-        // DEBUG LOGGING
-        dragDebugState.activeId = activeId;
-        dragDebugState.overId = overId;
-        dragDebugState.activeType = activeType;
-        dragDebugState.overType = overType;
-        dragDebugState.timestamp = Date.now();
-        if (active.rect.current?.translated) {
-            dragDebugState.activeRect = {
-                top: Math.round(active.rect.current.translated.top),
-                bottom: Math.round(active.rect.current.translated.top + active.rect.current.translated.height)
-            };
-        }
-        if (over.rect) {
-            dragDebugState.overRect = {
-                top: Math.round(over.rect.top),
-                bottom: Math.round(over.rect.top + over.rect.height),
-                height: Math.round(over.rect.height)
-            };
-        }
-
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
@@ -161,7 +140,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             const originalPlan = activeTrip.plans.find(p => p.id === activeId);
             const isMigration = originalPlan && originalPlan.date !== targetDate;
-            dragDebugState.isMigration = isMigration;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
@@ -181,14 +159,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     // If Empty Day -> Always Index 0
                     if (dayPlans.length === 0) {
-                        dragDebugState.decision = "Day Container - Empty Day -> Index 0";
                         const [movedItem] = newPlans.splice(activeIndex, 1);
                         newPlans.push(movedItem);
                         return newPlans;
                     }
 
                     // If Not Empty -> Do NOT force strict Top/Bottom Half logic.
-                    dragDebugState.decision = "Day Container - Populated -> Defer to Plan Hover";
                     return newPlans;
                 }
 
@@ -196,64 +172,34 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                 if (overIndex !== -1) {
-                    // EDGE CASE FIX FOR MIGRATION (Inter-Day):
+                    // MIGRATION FIX (Inter-Day):
+                    // Use "Filter and Splice" strategy to ensure visual accuracy when moving between days.
+                    // This bypasses arrayMove's index shifting logic which can be confusing during cross-list drag.
                     if (isMigration && over.rect && active.rect.current?.translated) {
                          const overRect = over.rect; // dnd-kit rect
                          const activeRect = active.rect.current.translated;
                          const overCenterY = overRect.top + overRect.height / 2;
                          const activeCenterY = activeRect.top + activeRect.height / 2;
+                         const isBelow = activeCenterY > overCenterY;
 
-                         const overItem = newPlans.find(p => p.id === overId);
+                         // 1. Remove active item from list (to get clean target indices)
+                         const activeItem = newPlans[activeIndex];
+                         const remainingPlans = newPlans.filter(p => p.id !== activeId);
 
-                         // Filter for VISUAL order items only (excluding the dragged item)
-                         const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
+                         // 2. Find the index of the item we are hovering over in the CLEAN list
+                         const visualOverIndex = remainingPlans.findIndex(p => p.id === overId);
 
-                         // Check First Item Edge Case
-                         const isOverFirstItem = overItem && dayPlans.length > 0 && dayPlans[0].id === overId;
-                         if (isOverFirstItem) {
-                             if (activeCenterY < overCenterY) {
-                                 // Top Half of First Item -> Force Start (0)
-                                 dragDebugState.decision = "Migration - First Item - Top Half -> Force Start";
-                                 const [movedItem] = newPlans.splice(activeIndex, 1);
-                                 const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
-                                 newPlans.splice(firstDayIndex, 0, movedItem);
-                                 return newPlans;
-                             } else {
-                                 // Bottom Half of First Item -> Force Index 1 (After Start)
-                                 // NOTE: Standard arrayMove(from, 0) inserts BEFORE 0. We want AFTER 0.
-                                 dragDebugState.decision = "Migration - First Item - Bottom Half -> Force Index 1";
-                                 const [movedItem] = newPlans.splice(activeIndex, 1);
-                                 const firstDayIndex = newPlans.findIndex(p => p.date === targetDate);
-                                 // Insert at firstDayIndex + 1
-                                 newPlans.splice(firstDayIndex + 1, 0, movedItem);
-                                 return newPlans;
-                             }
-                         }
+                         if (visualOverIndex !== -1) {
+                             // 3. Determine Insertion Index
+                             // If Below: Insert AFTER the target (index + 1)
+                             // If Above: Insert AT the target (index)
+                             const insertIndex = isBelow ? visualOverIndex + 1 : visualOverIndex;
 
-                         // Check Last Item Edge Case
-                         const isOverLastItem = overItem && dayPlans.length > 0 && dayPlans[dayPlans.length - 1].id === overId;
-                         if (isOverLastItem) {
-                             if (activeCenterY > overCenterY) {
-                                 // Bottom Half of Last Item -> Force End
-                                 dragDebugState.decision = "Migration - Last Item - Bottom Half -> Force End";
-                                 const [movedItem] = newPlans.splice(activeIndex, 1);
-                                 const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
-                                 newPlans.splice(lastDayIndex + 1, 0, movedItem);
-                                 return newPlans;
-                             } else {
-                                 // Top Half of Last Item -> Force Index N-1 (Before End)
-                                 // Standard arrayMove might do this correctly, but let's be explicit to avoid ambiguity
-                                 dragDebugState.decision = "Migration - Last Item - Top Half -> Force Before End";
-                                 const [movedItem] = newPlans.splice(activeIndex, 1);
-                                 const lastDayIndex = newPlans.findLastIndex(p => p.date === targetDate);
-                                 // Insert at lastDayIndex (pushing the last item to lastDayIndex + 1)
-                                 newPlans.splice(lastDayIndex, 0, movedItem);
-                                 return newPlans;
-                             }
+                             remainingPlans.splice(insertIndex, 0, activeItem);
+                             return remainingPlans;
                          }
                     }
 
-                    dragDebugState.decision = "Standard ArrayMove";
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
