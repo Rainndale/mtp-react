@@ -15,9 +15,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
 
-    // Track pointer Y for precise insertion logic during migrations
-    const currentPointerY = useRef(0);
-
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
         if (!activeTrip?.plans) return [];
@@ -38,7 +35,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
     }, [activeTrip, activeId]);
 
-    // Lock body scroll during drag and track pointer position
+    // Lock body scroll during drag
     React.useEffect(() => {
         const preventScroll = (e) => {
             if (activeId) {
@@ -46,33 +43,17 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             }
         };
 
-        const handlePointerMove = (e) => {
-            // Support both MouseEvent and TouchEvent
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                 currentPointerY.current = e.changedTouches[0].clientY;
-            } else {
-                 currentPointerY.current = e.clientY;
-            }
-        };
-
         if (activeId) {
             document.addEventListener('touchmove', preventScroll, { passive: false });
             document.body.style.touchAction = 'none';
-            // Use pointermove to track cursor globally
-            window.addEventListener('pointermove', handlePointerMove);
-            window.addEventListener('touchmove', handlePointerMove); // Fallback for some mobile
         } else {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
-            window.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('touchmove', handlePointerMove);
         }
 
         return () => {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
-            window.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('touchmove', handlePointerMove);
         };
     }, [activeId]);
 
@@ -157,67 +138,28 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             if (!targetDate) return;
 
-            // setLocalPlans((prevPlans) => { ... })
-            // We use a functional update to access the latest state safely.
+            const originalPlan = activeTrip.plans.find(p => p.id === activeId);
+            const isMigration = originalPlan && originalPlan.date !== targetDate;
+
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                 let newPlans = [...prevPlans];
 
-                // 1. Update Date if changed (Logic for UI feedback)
+                // 1. Update Date if changed
                 if (sourceDate !== targetDate) {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
-                // 2. Sorting Logic (Same Day OR Migration)
+                // 2. Sorting Logic
                 if (overIndex !== -1) {
+                    // Standard dnd-kit behavior:
+                    // If moving to a new list (Inter-day), we just insert it.
+                    // If moving in same list (Intra-day), we just move it.
+                    // The "shift" and "gap" are handled visually by SortableContext using the order in 'newPlans'.
+                    // By updating the array order here, dnd-kit will naturally animate the gap at the new index.
 
-                    // Filter out the active item first to determine insertion index in the "target list"
-                    const activeItem = newPlans.find(p => p.id === activeId);
-                    const plansFiltered = newPlans.filter(p => p.id !== activeId);
-
-                    // Find where the target item is in the filtered list
-                    // (This represents the list "without the hole" created by lifting the item)
-                    const overIndexFiltered = plansFiltered.findIndex(p => p.id === overId);
-
-                    if (overIndexFiltered !== -1 && activeItem) {
-                        let insertIndex = overIndexFiltered;
-
-                        // Get the pointer position relative to the target item
-                        const pointerY = currentPointerY.current;
-                        const overElement = over.rect; // dnd-kit rect
-
-                        if (overElement && pointerY > 0) {
-                            const overTop = overElement.top;
-                            const overBottom = overElement.top + overElement.height;
-                            const overCenterY = overElement.top + overElement.height / 2;
-
-                            // Pointer Logic:
-                            // "Example card A(card being drag) mouse pointer cross the top edge of of card B, card A must be place above card B"
-                            // "Example card A(card being drag) mouse pointer cross the bottom edge of of card B, card A must be place below card B"
-
-                            // Interpretation:
-                            // If pointer is in top half (crossing top edge towards center), insert BEFORE.
-                            // If pointer is in bottom half (crossing bottom edge towards center), insert AFTER.
-
-                            const isBelow = pointerY > overCenterY;
-
-                            if (isBelow) {
-                                insertIndex += 1;
-                            }
-                        }
-
-                        // Reconstruct array:
-                        // [ ...before, activeItem, ...after ]
-                        return [
-                            ...plansFiltered.slice(0, insertIndex),
-                            activeItem,
-                            ...plansFiltered.slice(insertIndex)
-                        ];
-                    }
-
-                    // Fallback to arrayMove if logic fails (shouldn't happen if overId is valid)
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
@@ -232,9 +174,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         setActivePlan(null);
         setActiveDay(null);
         setDragWidth(null);
-
-        // Reset pointer
-        currentPointerY.current = 0;
 
         if (!over) {
              setLocalPlans(activeTrip.plans);
