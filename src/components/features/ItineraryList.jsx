@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDate, formatDayDate } from '../../utils/date';
@@ -14,6 +14,10 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
+
+    // Track pointer Y for precise insertion logic during migrations
+    const currentPointerY = useRef(0);
+
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
         if (!activeTrip?.plans) return [];
@@ -24,27 +28,17 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     });
 
     // Sync local state with context when not dragging
-    // We strictly avoid syncing IF we just dropped an item and are waiting for the async update to return
-    // However, since activeId becomes null immediately, we might sync back to old state.
-    // Ideally, we trust optimistic update and only sync if activeTrip.plans actually changes from external source.
-    // For now, simple check:
     React.useEffect(() => {
         if (!activeId && activeTrip?.plans) {
             const sortedPlans = [...activeTrip.plans].sort((a, b) => {
                 if (a.date !== b.date) return a.date.localeCompare(b.date);
                 return (a.order || 0) - (b.order || 0);
             });
-            // Only update if different? Deep comparison is expensive.
-            // But usually this runs when activeTrip changes.
-            // If we just called addOrUpdateTrip, activeTrip will eventually update to match localPlans.
-            // If we setLocalPlans here, we might revert momentarily if activeTrip is stale?
-            // Yes, but React state updates are batched/fast.
             setLocalPlans(sortedPlans);
         }
     }, [activeTrip, activeId]);
 
-    // Lock body scroll during drag to prevent background scrolling on mobile
-    // Using explicit touchmove listener is more robust than style.touchAction on iOS for active drags
+    // Lock body scroll during drag and track pointer position
     React.useEffect(() => {
         const preventScroll = (e) => {
             if (activeId) {
@@ -52,19 +46,33 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             }
         };
 
+        const handlePointerMove = (e) => {
+            // Support both MouseEvent and TouchEvent
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                 currentPointerY.current = e.changedTouches[0].clientY;
+            } else {
+                 currentPointerY.current = e.clientY;
+            }
+        };
+
         if (activeId) {
-            // "passive: false" is required to allow preventDefault()
             document.addEventListener('touchmove', preventScroll, { passive: false });
-            // Also adding touch-action: none as a fallback layer
             document.body.style.touchAction = 'none';
+            // Use pointermove to track cursor globally
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('touchmove', handlePointerMove); // Fallback for some mobile
         } else {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('touchmove', handlePointerMove);
         }
 
         return () => {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('touchmove', handlePointerMove);
         };
     }, [activeId]);
 
@@ -105,14 +113,12 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         if (active.rect.current?.initial?.width) {
             setDragWidth(active.rect.current.initial.width);
         } else {
-             // Fallback if dnd-kit hasn't measured yet (e.g., fast interactions)
              const node = document.getElementById(active.id);
              if (node) {
                  setDragWidth(node.getBoundingClientRect().width);
              }
         }
 
-        // Check if it's a Day (active.id is a date string in 'YYYY-MM-DD' format usually, check against days array)
         if (days.includes(active.id)) {
             setActiveDay(active.id);
             setActivePlan(null);
@@ -135,12 +141,10 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
-        // Only handle PLAN moving over PLAN or DAY (for insertion)
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
 
-            // Find source and destination details
             const sourceDate = activePlan.date;
             let targetDate = null;
 
@@ -153,32 +157,23 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             if (!targetDate) return;
 
-            // Determine if this is a migration (different day) based on ORIGINAL source
-            // This prevents "flicker" where the item conceptually moves to the new day in state
-            // and then immediately loses the "isMigration" status, reverting to standard reorder logic
             const originalPlan = activeTrip.plans.find(p => p.id === activeId);
             const isMigration = originalPlan && originalPlan.date !== targetDate;
 
-            // If we are moving to a different day, or reordering within the same day
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                 let newPlans = [...prevPlans];
 
-                // 1. Update Date if changed
                 if (sourceDate !== targetDate) {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
-                // 2. Move item if over another plan
                 if (overIndex !== -1) {
                     let targetIndex = overIndex;
 
-                    // Only apply geometry-aware logic for Migrations (Day A -> Day B)
-                    // For Same-Day reordering, standard arrayMove logic (swapping) feels more natural/fluid.
                     if (isMigration) {
-                        // For migrations, we use a robust "Filter + Insert" strategy to avoid index shifting confusion.
                         const activeItem = newPlans.find(p => p.id === activeId);
                         const plansFiltered = newPlans.filter(p => p.id !== activeId);
                         const overIndexFiltered = plansFiltered.findIndex(p => p.id === overId);
@@ -187,22 +182,21 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             let insertIndex = overIndexFiltered;
 
                             const overElement = document.getElementById(overId);
-                            const activeRect = active.rect.current?.translated;
+                            // Use tracked pointerY instead of activeRect center
+                            const pointerY = currentPointerY.current;
 
-                            if (overElement && activeRect) {
+                            if (overElement && pointerY > 0) {
                                 const overRect = overElement.getBoundingClientRect();
-                                const activeCenterY = activeRect.top + activeRect.height / 2;
                                 const overCenterY = overRect.top + overRect.height / 2;
-                                const isBelow = activeCenterY > overCenterY;
 
-                                // Top Half: Insert Before (index stays same)
-                                // Bottom Half: Insert After (index + 1)
+                                // Simple logic: Above center -> Insert Before; Below center -> Insert After
+                                const isBelow = pointerY > overCenterY;
+
                                 if (isBelow) {
                                     insertIndex += 1;
                                 }
                             }
 
-                            // Reconstruct the array
                             return [
                                 ...plansFiltered.slice(0, insertIndex),
                                 activeItem,
@@ -214,15 +208,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
-                // 3. If over a Day header, ensure it's at the end of that day's list?
-                // Actually, if we just updated the date, it stays in its original index in the array
-                // but appears in the new day.
-                // To be safe, if dropping on a Day header, maybe move it to the end of the array?
-                // But array order != display order if filtered.
-                // However, if we append to end of array, it is guaranteed to be last in filter
-                // (assuming other items are earlier).
-                // Let's just leave it at current index if overIndex is -1, but update date.
-                // Visual sort is based on array order.
                 return newPlans;
             });
         }
@@ -236,14 +221,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         setDragWidth(null);
 
         if (!over) {
-             setLocalPlans(activeTrip.plans); // Revert
+             setLocalPlans(activeTrip.plans);
              return;
         }
 
         const activeIdStr = active.id;
         const overIdStr = over.id;
 
-        // === CASE A: Dragging a DAY ===
         if (days.includes(activeIdStr)) {
             if (days.includes(overIdStr) && activeIdStr !== overIdStr) {
                  const sourceDate = activeIdStr;
@@ -263,16 +247,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                  setLocalPlans(newPlans);
                  await addOrUpdateTrip({ ...activeTrip, plans: newPlans });
             } else {
-                 // Sync just in case
                  setLocalPlans([...localPlans]);
             }
             return;
         }
 
-        // === CASE B: Dragging a PLAN ===
         const finalPlans = [...localPlans];
 
-        // Recalculate order for every day
         days.forEach(day => {
             const dayPlans = finalPlans.filter(p => p.date === day);
             dayPlans.forEach((p, idx) => {
@@ -297,7 +278,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 {days.map((date, idx) => {
                     const dayPlans = plans
                         .filter(p => p.date === date);
-                        // Removed sort logic here to rely on array order for Drag and Drop 'Make Space' feature
 
                     return (
                         <DayGroup
