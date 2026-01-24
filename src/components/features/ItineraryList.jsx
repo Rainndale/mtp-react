@@ -15,8 +15,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
 
-    // Track drag direction for robust Edge-to-Center sorting logic
-    const lastActiveY = useRef(0);
+    // Track pointer Y for precise insertion logic during migrations
+    const currentPointerY = useRef(0);
 
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
@@ -38,7 +38,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
     }, [activeTrip, activeId]);
 
-    // Lock body scroll during drag
+    // Lock body scroll during drag and track pointer position
     React.useEffect(() => {
         const preventScroll = (e) => {
             if (activeId) {
@@ -46,17 +46,33 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             }
         };
 
+        const handlePointerMove = (e) => {
+            // Support both MouseEvent and TouchEvent
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                 currentPointerY.current = e.changedTouches[0].clientY;
+            } else {
+                 currentPointerY.current = e.clientY;
+            }
+        };
+
         if (activeId) {
             document.addEventListener('touchmove', preventScroll, { passive: false });
             document.body.style.touchAction = 'none';
+            // Use pointermove to track cursor globally
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('touchmove', handlePointerMove); // Fallback for some mobile
         } else {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('touchmove', handlePointerMove);
         }
 
         return () => {
             document.removeEventListener('touchmove', preventScroll);
             document.body.style.touchAction = '';
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('touchmove', handlePointerMove);
         };
     }, [activeId]);
 
@@ -103,11 +119,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
              }
         }
 
-        // Initialize lastActiveY
-        if (active.rect.current?.translated) {
-            lastActiveY.current = active.rect.current.translated.top;
-        }
-
         if (days.includes(active.id)) {
             setActiveDay(active.id);
             setActivePlan(null);
@@ -146,71 +157,67 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             if (!targetDate) return;
 
-            const originalPlan = activeTrip.plans.find(p => p.id === activeId);
-            const isMigration = originalPlan && originalPlan.date !== targetDate;
-
-            // Calculate drag direction
-            const activeRect = active.rect.current.translated;
-            const currentY = activeRect ? activeRect.top : 0;
-            const isMovingDown = currentY > lastActiveY.current;
-            if (activeRect) lastActiveY.current = currentY;
-
+            // setLocalPlans((prevPlans) => { ... })
+            // We use a functional update to access the latest state safely.
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                 let newPlans = [...prevPlans];
 
+                // 1. Update Date if changed (Logic for UI feedback)
                 if (sourceDate !== targetDate) {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
+                // 2. Sorting Logic (Same Day OR Migration)
                 if (overIndex !== -1) {
-                    let targetIndex = overIndex;
 
-                    if (isMigration) {
-                        const activeItem = newPlans.find(p => p.id === activeId);
-                        const plansFiltered = newPlans.filter(p => p.id !== activeId);
-                        const overIndexFiltered = plansFiltered.findIndex(p => p.id === overId);
+                    // Filter out the active item first to determine insertion index in the "target list"
+                    const activeItem = newPlans.find(p => p.id === activeId);
+                    const plansFiltered = newPlans.filter(p => p.id !== activeId);
 
-                        if (overIndexFiltered !== -1 && activeItem) {
-                            let insertIndex = overIndexFiltered;
+                    // Find where the target item is in the filtered list
+                    // (This represents the list "without the hole" created by lifting the item)
+                    const overIndexFiltered = plansFiltered.findIndex(p => p.id === overId);
 
-                            // Use Edge-to-Center logic for robust sorting
-                            // If moving DOWN: We want to insert AFTER as soon as our BOTTOM crosses the target's CENTER.
-                            // If moving UP: We want to insert BEFORE as soon as our TOP crosses the target's CENTER.
-                            // This removes bias caused by grab offsets or item height differences (e.g. scale effects).
+                    if (overIndexFiltered !== -1 && activeItem) {
+                        let insertIndex = overIndexFiltered;
 
-                            if (activeRect && over.rect) {
-                                const overRect = over.rect; // dnd-kit provided rect
-                                const overCenterY = overRect.top + overRect.height / 2;
+                        // Get the pointer position relative to the target item
+                        const pointerY = currentPointerY.current;
+                        const overElement = over.rect; // dnd-kit rect
 
-                                let isBelow = false;
+                        if (overElement && pointerY > 0) {
+                            const overTop = overElement.top;
+                            const overBottom = overElement.top + overElement.height;
+                            const overCenterY = overElement.top + overElement.height / 2;
 
-                                if (isMovingDown) {
-                                    // Moving Down: Check if our Bottom is past the Center
-                                    const activeBottom = activeRect.top + activeRect.height;
-                                    isBelow = activeBottom > overCenterY;
-                                } else {
-                                    // Moving Up: Check if our Top is NOT yet past the Center (i.e., we are below Center)
-                                    // We want "Before" (isBelow=false) if Top < Center.
-                                    // So we want "After" (isBelow=true) if Top > Center.
-                                    isBelow = activeRect.top > overCenterY;
-                                }
+                            // Pointer Logic:
+                            // "Example card A(card being drag) mouse pointer cross the top edge of of card B, card A must be place above card B"
+                            // "Example card A(card being drag) mouse pointer cross the bottom edge of of card B, card A must be place below card B"
 
-                                if (isBelow) {
-                                    insertIndex += 1;
-                                }
+                            // Interpretation:
+                            // If pointer is in top half (crossing top edge towards center), insert BEFORE.
+                            // If pointer is in bottom half (crossing bottom edge towards center), insert AFTER.
+
+                            const isBelow = pointerY > overCenterY;
+
+                            if (isBelow) {
+                                insertIndex += 1;
                             }
-
-                            return [
-                                ...plansFiltered.slice(0, insertIndex),
-                                activeItem,
-                                ...plansFiltered.slice(insertIndex)
-                            ];
                         }
+
+                        // Reconstruct array:
+                        // [ ...before, activeItem, ...after ]
+                        return [
+                            ...plansFiltered.slice(0, insertIndex),
+                            activeItem,
+                            ...plansFiltered.slice(insertIndex)
+                        ];
                     }
 
+                    // Fallback to arrayMove if logic fails (shouldn't happen if overId is valid)
                     return arrayMove(newPlans, activeIndex, overIndex);
                 }
 
@@ -225,7 +232,9 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         setActivePlan(null);
         setActiveDay(null);
         setDragWidth(null);
-        lastActiveY.current = 0;
+
+        // Reset pointer
+        currentPointerY.current = 0;
 
         if (!over) {
              setLocalPlans(activeTrip.plans);
