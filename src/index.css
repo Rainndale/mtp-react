@@ -147,7 +147,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .calendar-day-btn.in-range::before { display: block; background-color: var(--cal-range-bg); border-radius: 0; width: calc(100% + 2px); left: -1px; transform: translateY(-50%); }
 
 /* Navigation & Sidebar */
-.sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: var(--sidebar-bg); border-right: 1px solid var(--card-border); }
+.sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: var(--sidebar-bg); }
 .sidebar.closed { transform: translateX(-100%); }
 
 /* Itinerary Layout */

@@ -23,7 +23,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                 onClick={onClose}
             ></div>
             <nav
-                className={`sidebar fixed inset-y-0 left-0 w-full md:w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-[var(--sidebar-bg)] border-r border-[var(--card-border)] ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`sidebar fixed inset-y-0 left-0 w-full md:w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-[var(--sidebar-bg)] ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold tracking-tight text-[var(--text-main)] flex items-center">
