@@ -197,18 +197,35 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                 // 3. Handle Day Container Drop (Bottom Append)
                 if (overType === 'DAY') {
-                     // Find the last plan of the target day (excluding active item)
+                     // Check if active item is ALREADY the last item of the target day (visually)
+                     const plansInTargetDay = newPlans.filter(p => p.date === targetDate);
+                     const lastPlan = plansInTargetDay[plansInTargetDay.length - 1];
+
+                     // If it's already the last item...
+                     if (lastPlan && lastPlan.id === activeId) {
+                         // If we performed a migration (date change), we must return newPlans to save that state.
+                         if (isMigration) {
+                             return newPlans;
+                         }
+                         // Otherwise, if date is same and position is same, do nothing (prevent infinite re-render).
+                         return prevPlans;
+                     }
+
+                     // Find the last plan of the target day (excluding active item) to insert after
                      const lastPlanIndex = newPlans.findLastIndex(p => p.date === targetDate && p.id !== activeId);
 
                      if (lastPlanIndex !== -1) {
                          const [movedItem] = newPlans.splice(activeIndex, 1);
-                         // Re-calculate last index
+                         // Re-calculate last index (should be the same as lastPlanIndex if we just removed activeId, unless activeId was before it)
                          const adjustedLastIndex = newPlans.findLastIndex(p => p.date === targetDate);
                          // Insert after
                          newPlans.splice(adjustedLastIndex + 1, 0, movedItem);
                          return newPlans;
                      }
-                     // If day is empty, just let it be (date updated above is enough)
+                     // If day is empty (except for active item which we just moved via date change),
+                     // it's already in the right place (index 0 of that day).
+                     // But we must return newPlans if isMigration happened.
+                     if (isMigration) return newPlans;
                 }
 
                 return newPlans;
