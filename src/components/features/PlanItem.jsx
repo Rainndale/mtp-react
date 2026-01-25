@@ -24,7 +24,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
     };
 
     const statusColors = {
-        'Confirmed': 'bg-[#10b981]',
+        'Confirmed': 'bg-[#22c55e]',
         'Tentative': 'bg-[#f59e0b]',
         'Cancelled': 'bg-[#ef4444]',
     };
