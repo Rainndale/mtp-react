@@ -7,7 +7,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) => {
+const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
@@ -53,6 +53,9 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
     const showSwapIndicator = isOver && isDraggingDay && !isDragging;
 
+    // Sticky Logic: Disable sticky if ANY drag is active (isDragging = self, isGlobalDragging = plan/day)
+    const shouldStick = !isDragging && !isGlobalDragging;
+
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
         opacity: isDragging ? 0.4 : 1,
@@ -83,7 +86,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 className={`
                     day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
+                    ${shouldStick ? 'sticky top-[48px] md:top-[56px] z-40' : ''}
                 `}
             >
                 <div className="flex items-center">
