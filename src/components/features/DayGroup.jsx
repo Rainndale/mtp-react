@@ -53,8 +53,8 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
     const showSwapIndicator = isOver && isDraggingDay && !isDragging;
 
-    // Ghost Logic: If dragging, hide the real header (opacity-0) and show a visual ghost
-    const showGhost = isDragging || isGlobalDragging;
+    // Sticky Logic: Disable sticky if ANY drag is active (isDragging = self, isGlobalDragging = plan/day)
+    const shouldStick = !isDragging && !isGlobalDragging;
 
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
@@ -62,21 +62,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         zIndex: isDragging ? 20 : 'auto',
         position: 'relative',
     };
-
-    // Shared Header Content
-    const HeaderContent = () => (
-        <>
-            <div className="flex items-center">
-                <div>
-                    <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
-                    <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
-                </div>
-            </div>
-            <div className="text-[var(--text-muted)]">
-                    <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
-            </div>
-        </>
-    );
 
     return (
         <div
@@ -87,8 +72,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* 1. Real Header (Physics) */}
-            {/* Receives Refs. Flows naturally (static) when dragging to fix coordinates. */}
+            {/* Header (Sticky) */}
             <div
                 id={date}
                 ref={(node) => {
@@ -102,26 +86,19 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 className={`
                     day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${!showGhost ? 'sticky top-[48px] md:top-[56px] z-40' : 'opacity-0 pointer-events-none'}
+                    ${shouldStick ? 'sticky top-[48px] md:top-[56px] z-40' : ''}
                 `}
             >
-                <HeaderContent />
-            </div>
-
-            {/* 2. Ghost Header (Visual Fixed Overlay) */}
-            {/* Rendered OUTSIDE the flow to avoid impacting layout/scrolling. */}
-            {/* It mimics the position of where the sticky header WOULD be. */}
-            {showGhost && (
-                <div
-                    className={`
-                        day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                        fixed top-[48px] md:top-[56px] left-0 right-0 max-w-4xl z-50 pointer-events-none
-                    `}
-                >
-                    <HeaderContent />
+                <div className="flex items-center">
+                    <div>
+                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
+                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
+                    </div>
                 </div>
-            )}
+                <div className="text-[var(--text-muted)]">
+                     <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
+                </div>
+            </div>
 
             <motion.div
                 initial={false}
