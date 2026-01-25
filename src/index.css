@@ -28,15 +28,15 @@
 }
 
 html.dark {
-    --bg-color: #0f172a;
+    --bg-color: #141316;
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --sidebar-bg: #0f172a;
-    --card-bg: #1e293b;
+    --sidebar-bg: #141316;
+    --card-bg: #1B1A1F;
     --card-border: rgba(255, 255, 255, 0.05);
-    --input-bg: #0f172a;
+    --input-bg: #222128;
     --input-border: #334155;
-    --modal-bg: #1e293b;
+    --modal-bg: #1B1A1F;
     --modal-backdrop: rgba(0, 0, 0, 0.8);
     --icon-filter: invert(1);
     --accent-blue: #3b82f6;
