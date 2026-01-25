@@ -288,6 +288,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             onAddPlan={() => onOpenPlanModal(date)}
                             onEditPlan={onEditPlan}
                             activeId={activeId}
+                            isGlobalDragging={!!activeId} // Pass drag state
                         />
                     );
                 })}
