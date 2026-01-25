@@ -28,19 +28,19 @@
 }
 
 html.dark {
-    --bg-color: #141316;
+    --bg-color: #000000;
     --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --sidebar-bg: #141316;
-    --card-bg: #1B1A1F;
-    --card-border: rgba(255, 255, 255, 0.05);
-    --input-bg: #222128;
-    --input-border: #334155;
-    --modal-bg: #1B1A1F;
+    --text-muted: #9ca3af;
+    --sidebar-bg: #000000;
+    --card-bg: #121212;
+    --card-border: #374151;
+    --input-bg: #2C2C2C;
+    --input-border: #374151;
+    --modal-bg: #121212;
     --modal-backdrop: rgba(0, 0, 0, 0.8);
     --icon-filter: invert(1);
-    --accent-blue: #3b82f6;
-    --accent-blue-hover: #60a5fa;
+    --accent-blue: #60a5fa;
+    --accent-blue-hover: #93c5fd;
     --card-selected-bg: rgba(59, 130, 246, 0.1);
     --card-selected-border: rgba(59, 130, 246, 0.5);
     --cal-range-bg: #1e3a8a;
