@@ -31,24 +31,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         data: { type: 'DAY', date }
     });
 
-    // Explicit Header Drop Zone (Ref attached to sticky element)
-    const {
-        setNodeRef: setHeaderDropRef,
-        isOver: isOverHeader
-    } = useDroppable({
-        id: `header-${date}`,
-        data: { type: 'DAY_HEADER', date }
-    });
-
-    // Explicit Footer Drop Zone
-    const {
-        setNodeRef: setFooterDropRef,
-        isOver: isOverFooter
-    } = useDroppable({
-        id: `footer-${date}`,
-        data: { type: 'DAY_FOOTER', date }
-    });
-
     // Determine if we should show the swap indicator
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
     const showSwapIndicator = isOver && isDraggingDay && !isDragging;
@@ -75,10 +57,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
             {/* Header (Sticky) */}
             <div
                 id={date}
-                ref={(node) => {
-                    setDragRef(node);
-                    setHeaderDropRef(node);
-                }}
+                ref={setDragRef}
                 {...attributes}
                 {...listeners}
                 onClick={() => toggleDayCollapse(activeTrip.id, date)}
@@ -122,7 +101,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                     </SortableContext>
 
                     <div
-                        ref={setFooterDropRef}
                         onClick={() => onAddPlan(date)}
                         className={`
                             h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed
