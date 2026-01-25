@@ -69,33 +69,31 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* Header Wrapper */}
-            <div className="relative">
-                <div
-                    id={date}
-                    ref={(node) => {
-                        setDragRef(node);
-                        setHeaderDropRef(node);
-                    }}
-                    {...attributes}
-                    {...listeners}
-                    onClick={() => toggleDayCollapse(activeTrip.id, date)}
-                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    className={`
-                        day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                        ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
-                    `}
-                >
-                    <div className="flex items-center">
-                        <div>
-                            <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
-                            <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
-                        </div>
+            {/* Header (Sticky) */}
+            <div
+                id={date}
+                ref={(node) => {
+                    setDragRef(node);
+                    setHeaderDropRef(node);
+                }}
+                {...attributes}
+                {...listeners}
+                onClick={() => toggleDayCollapse(activeTrip.id, date)}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                className={`
+                    day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
+                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
+                    ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
+                `}
+            >
+                <div className="flex items-center">
+                    <div>
+                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
+                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
                     </div>
-                    <div className="text-[var(--text-muted)]">
-                         <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
-                    </div>
+                </div>
+                <div className="text-[var(--text-muted)]">
+                     <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
                 </div>
             </div>
 

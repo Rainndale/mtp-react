@@ -39,8 +39,9 @@ export const customCollisionDetection = (args) => {
             const relativeY = pointerCoordinates.y - containerRect.top;
 
             // ZONE DEFINITIONS
-            const HEADER_ZONE_HEIGHT = 60; // Approx header height
-            const FOOTER_ZONE_HEIGHT = 60; // Approx footer height
+            // Increased to 150px to provide hysteresis/buffer against layout shifts (e.g., insertion pushing the container)
+            const HEADER_ZONE_HEIGHT = 150;
+            const FOOTER_ZONE_HEIGHT = 150;
             const containerHeight = containerRect.height;
 
             // Check Top Zone (Header)
