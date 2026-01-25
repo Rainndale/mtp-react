@@ -60,13 +60,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const sensors = useSensors(
         useSensor(MouseSensor, {
             activationConstraint: {
-                delay: 600,
+                delay: 500,
                 tolerance: 5,
             }
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 600,
+                delay: 500,
                 tolerance: 5,
             }
         })
@@ -127,75 +127,35 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             const activePlan = plans.find(p => p.id === activeId);
             if (!activePlan) return;
 
+            const currentDate = activePlan.date;
             let targetDate = null;
 
-            if (overType === 'PLAN') {
+            if (overType === 'DAY') {
+                targetDate = overId;
+            } else if (overType === 'PLAN') {
                 const overPlan = plans.find(p => p.id === overId);
                 if (overPlan) {
                     targetDate = overPlan.date;
                 }
-            } else if (overType === 'DAY_HEADER') {
-                targetDate = over.data.current.date;
-            } else if (overType === 'DAY_FOOTER') {
-                targetDate = over.data.current.date;
-            } else if (overType === 'DAY') {
-                targetDate = overId;
             }
 
             if (!targetDate) return;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
+                const overIndex = prevPlans.findIndex(p => p.id === overId);
+
                 let newPlans = [...prevPlans];
 
-                // 1. Always update the date first if needed (Migration)
-                if (newPlans[activeIndex].date !== targetDate) {
+                // 1. Update the date if it has changed
+                if (currentDate !== targetDate) {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
-                // 2. Position Logic
-                if (overType === 'PLAN') {
-                    // Standard Sortable Swap
-                    const overIndex = prevPlans.findIndex(p => p.id === overId);
-                    if (activeIndex !== overIndex) {
-                        return arrayMove(newPlans, activeIndex, overIndex);
-                    }
-                } else if (overType === 'DAY_HEADER') {
-                    // Explicit Header -> Insert at START of Day
-                    const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                    // Find first item of target date
-                    const firstPlanIndex = newPlans.findIndex(p => p.date === targetDate);
-
-                    if (firstPlanIndex !== -1) {
-                         // Insert BEFORE the first plan
-                         newPlans.splice(firstPlanIndex, 0, movedItem);
-                    } else {
-                         // Day is empty (or just contained the moved item), just push it
-                         newPlans.push(movedItem);
-                    }
-                    return newPlans;
-
-                } else if (overType === 'DAY_FOOTER') {
-                    // Explicit Footer -> Insert at END of Day
-                    const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                    // Find LAST item of target date
-                    let lastPlanIndex = -1;
-                    for (let i = newPlans.length - 1; i >= 0; i--) {
-                        if (newPlans[i].date === targetDate) {
-                            lastPlanIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (lastPlanIndex !== -1) {
-                        // Insert AFTER the last plan
-                        newPlans.splice(lastPlanIndex + 1, 0, movedItem);
-                    } else {
-                        newPlans.push(movedItem);
-                    }
-                    return newPlans;
+                // 2. Perform arrayMove if dropping over another plan (reordering)
+                // This handles both same-day reorder and inter-day insertion at specific position
+                if (overIndex !== -1) {
+                    newPlans = arrayMove(newPlans, activeIndex, overIndex);
                 }
 
                 return newPlans;
@@ -217,14 +177,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         const activeIdStr = active.id;
         const overIdStr = over.id;
-
-        // Strict Drop Enforcement: Cancel if dropping on Header or Footer
-        const overType = over.data.current?.type;
-        if (overType === 'DAY_HEADER' || overType === 'DAY_FOOTER') {
-             // Revert to original state (Cancel the action)
-             setLocalPlans(activeTrip.plans);
-             return;
-        }
 
         // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
@@ -251,7 +203,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return;
         }
 
-        // Handle Plan Finalization
+        // Handle Plan Finalization (Just saving the state from DragOver)
         // Normalize Order
         const finalPlans = [...localPlans];
         days.forEach(day => {
@@ -288,7 +240,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             onAddPlan={() => onOpenPlanModal(date)}
                             onEditPlan={onEditPlan}
                             activeId={activeId}
-                            isGlobalDragging={!!activeId} // Pass drag state
+                            isGlobalDragging={!!activeId}
                         />
                     );
                 })}
