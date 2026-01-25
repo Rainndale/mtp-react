@@ -87,43 +87,41 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* Header Wrapper: Grid allows stacking Real and Ghost headers */}
-            <div className="grid">
-                {/* 1. Real Header (Physics) */}
-                {/* Receives Refs. Flows naturally (static) when dragging to fix coordinates. */}
+            {/* 1. Real Header (Physics) */}
+            {/* Receives Refs. Flows naturally (static) when dragging to fix coordinates. */}
+            <div
+                id={date}
+                ref={(node) => {
+                    setDragRef(node);
+                    setHeaderDropRef(node);
+                }}
+                {...attributes}
+                {...listeners}
+                onClick={() => toggleDayCollapse(activeTrip.id, date)}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                className={`
+                    day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
+                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
+                    ${!showGhost ? 'sticky top-[48px] md:top-[56px] z-40' : 'opacity-0 pointer-events-none'}
+                `}
+            >
+                <HeaderContent />
+            </div>
+
+            {/* 2. Ghost Header (Visual Fixed Overlay) */}
+            {/* Rendered OUTSIDE the flow to avoid impacting layout/scrolling. */}
+            {/* It mimics the position of where the sticky header WOULD be. */}
+            {showGhost && (
                 <div
-                    id={date}
-                    ref={(node) => {
-                        setDragRef(node);
-                        setHeaderDropRef(node);
-                    }}
-                    {...attributes}
-                    {...listeners}
-                    onClick={() => toggleDayCollapse(activeTrip.id, date)}
-                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     className={`
                         day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200 col-start-1 row-start-1
-                        ${!showGhost ? 'sticky top-[48px] md:top-[56px] z-40' : 'opacity-0 pointer-events-none'}
+                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
+                        fixed top-[48px] md:top-[56px] left-0 right-0 max-w-4xl z-50 pointer-events-none
                     `}
                 >
                     <HeaderContent />
                 </div>
-
-                {/* 2. Ghost Header (Visual) */}
-                {/* Only visible during drag. Sticky. Ignored by pointers/DnD. */}
-                {showGhost && (
-                    <div
-                        className={`
-                            day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                            w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200 col-start-1 row-start-1
-                            sticky top-[48px] md:top-[56px] z-50 pointer-events-none
-                        `}
-                    >
-                        <HeaderContent />
-                    </div>
-                )}
-            </div>
+            )}
 
             <motion.div
                 initial={false}
