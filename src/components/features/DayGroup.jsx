@@ -35,8 +35,9 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
     const showSwapIndicator = isOver && isDraggingDay && !isDragging;
 
-    // Sticky Logic: Disable sticky if ANY drag is active (isDragging = self, isGlobalDragging = plan/day)
-    const shouldStick = !isDragging && !isGlobalDragging;
+    // Sticky Logic: Only disable sticky if THIS day is being dragged.
+    // Keeping other headers sticky provides a more stable anchor during plan migration.
+    const shouldStick = !isDragging;
 
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
