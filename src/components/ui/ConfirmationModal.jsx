@@ -32,8 +32,8 @@ const ConfirmationModal = ({
                 );
             case 'success':
                 return (
-                    <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center mx-auto mb-6">
-                        <i className="fa-solid fa-check-circle text-3xl text-emerald-500"></i>
+                    <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <i className="fa-solid fa-check-circle text-3xl text-[#22c55e]"></i>
                     </div>
                 );
             case 'info':
@@ -52,7 +52,7 @@ const ConfirmationModal = ({
             case 'warning':
                 return 'bg-amber-500 hover:bg-amber-600';
             case 'success':
-                return 'bg-emerald-600 hover:bg-emerald-700';
+                return 'bg-[#22c55e] hover:bg-green-600';
             case 'info':
             default:
                 return 'bg-[var(--accent-blue)] hover:bg-[var(--accent-blue-hover)]';
