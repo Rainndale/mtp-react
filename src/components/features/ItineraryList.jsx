@@ -143,8 +143,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
-                const overIndex = prevPlans.findIndex(p => p.id === overId);
-
                 let newPlans = [...prevPlans];
 
                 // 1. Update the date if it has changed
@@ -152,10 +150,62 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
                 }
 
-                // 2. Perform arrayMove if dropping over another plan (reordering)
-                // This handles both same-day reorder and inter-day insertion at specific position
-                if (overIndex !== -1) {
-                    newPlans = arrayMove(newPlans, activeIndex, overIndex);
+                // 2. Handle Plan Reordering with precise splice logic to avoid off-by-one errors
+                if (overType === 'PLAN') {
+                    const overRect = over.rect;
+                    const activeRect = active.rect.current.translated;
+
+                    // Only perform precise calculation if rects are available
+                    if (overRect && activeRect) {
+                        const overCenterY = overRect.top + overRect.height / 2;
+                        const activeCenterY = activeRect.top + activeRect.height / 2;
+
+                        // If active is below over (visually), we insert after
+                        const isBelow = activeCenterY > overCenterY;
+
+                        // Remove from old position
+                        const [movedItem] = newPlans.splice(activeIndex, 1);
+
+                        // Find index of target in the reduced array
+                        const adjustedOverIndex = newPlans.findIndex(p => p.id === overId);
+
+                        // Calculate insertion index
+                        // If we are below the target center, we put it AFTER (index + 1)
+                        // If we are above the target center, we put it BEFORE (index)
+                        const insertIndex = isBelow ? adjustedOverIndex + 1 : adjustedOverIndex;
+
+                        if (insertIndex >= 0 && insertIndex <= newPlans.length) {
+                            newPlans.splice(insertIndex, 0, movedItem);
+                            return newPlans;
+                        }
+                    }
+                }
+
+                // Fallback / Standard arrayMove for same-list if rects missing or Day collision
+                const overIndex = prevPlans.findIndex(p => p.id === overId);
+                if (overType === 'PLAN' && overIndex !== -1) {
+                     return arrayMove(newPlans, activeIndex, overIndex);
+                }
+
+                // If overType is 'DAY' (Bottom append logic usually), we just let the date update handle it (implicitly appends due to sort order usually, or we can force push)
+                if (overType === 'DAY') {
+                     // If we are dragging into a Day container, we usually want it at the end if it's not handled by Plan collision
+                     // But we already updated the date.
+                     // To be safe, we can move it to the end of that day's items in the array?
+                     // Actually, if we just updated date, its position in array remains `activeIndex` (unless we sort).
+                     // But `localPlans` is used for rendering.
+                     // Let's just remove and push to end of list (or just leave it and let SortableContext handle next move).
+                     // Better: Move to the end of the plans *for that day*.
+
+                     // However, finding the index after the last plan of targetDate:
+                     const lastPlanIndex = newPlans.findLastIndex(p => p.date === targetDate);
+                     if (lastPlanIndex !== -1 && lastPlanIndex !== activeIndex) {
+                         const [movedItem] = newPlans.splice(activeIndex, 1);
+                         // Find new index of last plan
+                         const adjustedLastIndex = newPlans.findLastIndex(p => p.date === targetDate);
+                         newPlans.splice(adjustedLastIndex + 1, 0, movedItem);
+                         return newPlans;
+                     }
                 }
 
                 return newPlans;
