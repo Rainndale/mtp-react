@@ -22,69 +22,22 @@ export const customCollisionDetection = (args) => {
 
     // Default behavior for Plans (or anything else)
 
-    // 1. Identify valid candidates (Day Containers) for Geometric Analysis
-    // We prioritize finding WHICH DAY the pointer is over, then check WHERE in that day it is.
-    const dayCollisions = pointerWithin({
-        ...args,
-        droppableContainers: droppableContainers.filter(c => c.data.current?.type === 'DAY')
-    });
-
-    // If we are over a Day, analyze geometry
-    if (dayCollisions.length > 0) {
-        const closestDay = dayCollisions[0]; // Usually just one
-        const containerRect = closestDay.data.droppableContainer.rect.current;
-        const dayId = closestDay.data.droppableContainer.id;
-
-        if (containerRect && pointerCoordinates) {
-            // STICKY HEADER OFFSET ADJUSTMENT
-            // The DayGroup header is sticky at approx 56px (md) or 48px (mobile) from top.
-            // If the container Top is ABOVE this threshold (scrolled up), the visual header is STUCK at that threshold.
-            // We must detect the collision relative to this VISUAL location, not the physical container top.
-
-            // Assume header sticks at roughly 56px from viewport top.
-            const STICKY_OFFSET = 56;
-
-            // The visual start of the header zone is either the physical top OR the sticky position (max of the two)
-            const visualTop = Math.max(containerRect.top, STICKY_OFFSET);
-
-            // Calculate Y relative to the VISUAL header top
-            const relativeY = pointerCoordinates.y - visualTop;
-
-            // ZONE DEFINITIONS
-            const HEADER_ZONE_HEIGHT = 150;
-            const FOOTER_ZONE_HEIGHT = 150;
-            const containerHeight = containerRect.height;
-            const containerBottom = containerRect.top + containerHeight;
-
-            // Check Top Zone (Header)
-            // We allow a small negative buffer (-20) just in case the pointer is slightly above the sticky header
-            if (relativeY >= -20 && relativeY < HEADER_ZONE_HEIGHT) {
-                // Find the explicit header droppable for this day to return it as a collision
-                const headerDroppable = droppableContainers.find(c => c.id === `header-${dayId}`);
-                if (headerDroppable) return [{ ...closestDay, data: { droppableContainer: headerDroppable } }];
-            }
-
-            // Check Bottom Zone (Footer)
-            // Footer is not sticky, so we measure from physical bottom
-            const distFromBottom = containerBottom - pointerCoordinates.y;
-
-            if (distFromBottom >= 0 && distFromBottom < FOOTER_ZONE_HEIGHT) {
-                // Find the explicit footer droppable
-                const footerDroppable = droppableContainers.find(c => c.id === `footer-${dayId}`);
-                if (footerDroppable) return [{ ...closestDay, data: { droppableContainer: footerDroppable } }];
-            }
-        }
-    }
-
-    // If not in a specialized zone, proceed to standard collision detection
-
-    // First, try pointerWithin
+    // First, try standard pointerWithin to see what we are explicitly hovering
     const collisions = pointerWithin(args);
 
     // If we have no collisions, return empty
     if (collisions.length === 0) return collisions;
 
-    // PRIORITY 1: Explicit Header or Footer Targets (Fallback for tight hover)
+    // PRIORITY 1: Explicit PLAN Collisions
+    // If the user is strictly hovering a Plan, we MUST respect that to allow precise reordering/swapping.
+    // This fixes the "Skipping Plans" issue where a large geometric zone would override the plans inside it.
+    const overPlan = collisions.find(c => c.data.droppableContainer.data.current?.type === 'PLAN');
+    if (overPlan) {
+        return [overPlan];
+    }
+
+    // PRIORITY 2: Explicit Header/Footer Collisions
+    // If the user hits the actual Header/Footer elements (if visible/detectable)
     const overHeaderOrFooter = collisions.find(c => {
         const type = c.data.droppableContainer.data.current?.type;
         return type === 'DAY_HEADER' || type === 'DAY_FOOTER';
@@ -94,17 +47,38 @@ export const customCollisionDetection = (args) => {
         return [overHeaderOrFooter];
     }
 
-    // PRIORITY 2: Plans
-    const overPlan = collisions.find(c => c.data.droppableContainer.data.current?.type === 'PLAN');
-    if (overPlan) {
-        return [overPlan];
-    }
-
-    // PRIORITY 3: Day Container (Background/Gaps)
+    // PRIORITY 3: Day Container (Geometric Fallback)
+    // If we hit the Day Container (background/gap) but missed specific items,
+    // we use Geometry to catch "Fast Drags" or edge cases.
     const overDay = collisions.find(c => c.data.droppableContainer.data.current?.type === 'DAY');
 
     if (overDay) {
         const dayId = overDay.data.droppableContainer.id;
+        const containerRect = overDay.data.droppableContainer.rect.current;
+
+        // GEOMETRIC SAFETY NET
+        if (containerRect && pointerCoordinates) {
+            // We use the "Smart Anchor" concept here but only as a fallback.
+            // Since we disabled sticky headers during drag, containerRect.top is physical and stable.
+
+            const relativeY = pointerCoordinates.y - containerRect.top;
+            const ZONE_BUFFER = 150; // Large buffer to catch fast drags
+            const containerHeight = containerRect.height;
+
+            // Check Top Zone (Header Fallback)
+            if (relativeY >= -50 && relativeY < ZONE_BUFFER) {
+                const headerDroppable = droppableContainers.find(c => c.id === `header-${dayId}`);
+                if (headerDroppable) return [{ ...overDay, data: { droppableContainer: headerDroppable } }];
+            }
+
+            // Check Bottom Zone (Footer Fallback)
+            if (relativeY > (containerHeight - ZONE_BUFFER) && relativeY <= (containerHeight + 50)) {
+                const footerDroppable = droppableContainers.find(c => c.id === `footer-${dayId}`);
+                if (footerDroppable) return [{ ...overDay, data: { droppableContainer: footerDroppable } }];
+            }
+        }
+
+        // If geometry didn't match (middle of day), try to find closest plan
         const plansInDay = droppableContainers.filter(c =>
             c.data.current?.type === 'PLAN' &&
             c.data.current?.plan?.date === dayId
@@ -120,6 +94,7 @@ export const customCollisionDetection = (args) => {
                 return closestPlan;
             }
         }
+
         return [overDay];
     }
 
