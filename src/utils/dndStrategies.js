@@ -22,14 +22,52 @@ export const customCollisionDetection = (args) => {
 
     // Default behavior for Plans (or anything else)
 
-    // First, try pointerWithin to see if we are directly over a Target
+    // 1. Identify valid candidates (Day Containers) for Geometric Analysis
+    // We prioritize finding WHICH DAY the pointer is over, then check WHERE in that day it is.
+    const dayCollisions = pointerWithin({
+        ...args,
+        droppableContainers: droppableContainers.filter(c => c.data.current?.type === 'DAY')
+    });
+
+    // If we are over a Day, analyze geometry
+    if (dayCollisions.length > 0) {
+        const closestDay = dayCollisions[0]; // Usually just one
+        const containerRect = closestDay.data.droppableContainer.rect.current;
+        const dayId = closestDay.data.droppableContainer.id;
+
+        if (containerRect && pointerCoordinates) {
+            const relativeY = pointerCoordinates.y - containerRect.top;
+
+            // ZONE DEFINITIONS
+            const HEADER_ZONE_HEIGHT = 60; // Approx header height
+            const FOOTER_ZONE_HEIGHT = 60; // Approx footer height
+            const containerHeight = containerRect.height;
+
+            // Check Top Zone (Header)
+            if (relativeY >= 0 && relativeY < HEADER_ZONE_HEIGHT) {
+                // Find the explicit header droppable for this day to return it as a collision
+                const headerDroppable = droppableContainers.find(c => c.id === `header-${dayId}`);
+                if (headerDroppable) return [{ ...closestDay, data: { droppableContainer: headerDroppable } }];
+            }
+
+            // Check Bottom Zone (Footer)
+            if (relativeY > (containerHeight - FOOTER_ZONE_HEIGHT) && relativeY <= containerHeight) {
+                // Find the explicit footer droppable
+                const footerDroppable = droppableContainers.find(c => c.id === `footer-${dayId}`);
+                if (footerDroppable) return [{ ...closestDay, data: { droppableContainer: footerDroppable } }];
+            }
+        }
+    }
+
+    // If not in a specialized zone, proceed to standard collision detection
+
+    // First, try pointerWithin
     const collisions = pointerWithin(args);
 
     // If we have no collisions, return empty
     if (collisions.length === 0) return collisions;
 
-    // PRIORITY 1: Explicit Header or Footer Targets
-    // If the user is hovering over the explicit "Top" or "Bottom" zones, they MUST win.
+    // PRIORITY 1: Explicit Header or Footer Targets (Fallback for tight hover)
     const overHeaderOrFooter = collisions.find(c => {
         const type = c.data.droppableContainer.data.current?.type;
         return type === 'DAY_HEADER' || type === 'DAY_FOOTER';
@@ -40,7 +78,6 @@ export const customCollisionDetection = (args) => {
     }
 
     // PRIORITY 2: Plans
-    // If we didn't hit a header/footer, check if we hit a Plan.
     const overPlan = collisions.find(c => c.data.droppableContainer.data.current?.type === 'PLAN');
     if (overPlan) {
         return [overPlan];
@@ -50,19 +87,12 @@ export const customCollisionDetection = (args) => {
     const overDay = collisions.find(c => c.data.droppableContainer.data.current?.type === 'DAY');
 
     if (overDay) {
-        // We are inside a Day container, but not directly over a Plan, Header, or Footer.
-        // To prevent flickering and ensure we "make space" properly, we should find the
-        // closest Plan within this Day to the pointer.
-
         const dayId = overDay.data.droppableContainer.id;
-
-        // Filter all droppables to find Plans belonging to this Day
         const plansInDay = droppableContainers.filter(c =>
             c.data.current?.type === 'PLAN' &&
             c.data.current?.plan?.date === dayId
         );
 
-        // If there are plans in this day, find the closest one
         if (plansInDay.length > 0) {
             const closestPlan = closestCenter({
                 ...args,
@@ -70,15 +100,11 @@ export const customCollisionDetection = (args) => {
             });
 
             if (closestPlan.length > 0) {
-                // Return the closest plan as the collision target
                 return closestPlan;
             }
         }
-
-        // If no plans in the day (empty day), or calculation failed, fall back to the Day container
         return [overDay];
     }
 
-    // Fallback (unlikely to reach here if collisions found, but safe)
     return collisions;
 };
