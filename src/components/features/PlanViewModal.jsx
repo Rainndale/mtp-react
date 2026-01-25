@@ -17,7 +17,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
     if (!plan) return null;
 
     const statusColors = {
-        'Confirmed': 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20',
+        'Confirmed': 'bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20',
         'Tentative': 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
         'Cancelled': 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20',
     };

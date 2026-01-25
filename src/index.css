@@ -19,7 +19,6 @@
     --icon-filter: invert(0);
     --accent-blue: #3b82f6;
     --accent-blue-hover: #2563eb;
-    --indicator-green: #22c55e;
     --card-selected-bg: rgba(37, 99, 235, 0.05);
     --card-selected-border: rgba(37, 99, 235, 0.4);
     --cal-range-bg: #dbeafe;
@@ -182,7 +181,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .plan-item:active { transform: scale(0.98); }
 
 .status-fin { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 0.5rem 0 0 0.5rem; z-index: 2; }
-.fin-Confirmed { background-color: #10b981; }
+.fin-Confirmed { background-color: #22c55e; }
 .fin-Tentative { background-color: #f59e0b; }
 .fin-Cancelled { background-color: #ef4444; }
 
@@ -221,16 +220,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     overflow: visible;
     transform: translateY(0);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#global-drag-indicator {
-    position: absolute;
-    height: 2px;
-    background-color: var(--indicator-green);
-    z-index: 200;
-    border-radius: 2px;
-    pointer-events: none;
-    display: none;
 }
 
 .dragging { opacity: 0.1 !important; transform: scale(0.95); border: none !important; }
