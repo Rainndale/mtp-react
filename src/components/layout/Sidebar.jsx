@@ -23,15 +23,15 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                 onClick={onClose}
             ></div>
             <nav
-                className={`sidebar fixed inset-y-0 left-0 w-full md:w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`sidebar fixed inset-y-0 left-0 w-full md:w-80 !z-[9999] p-6 flex flex-col transition-transform duration-400 ease-out bg-[var(--sidebar-bg)] border-r border-[var(--card-border)] ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
+                    <h2 className="text-xl font-bold tracking-tight text-[var(--text-main)] flex items-center">
                         <i className="fa-solid fa-earth-americas mr-3 text-blue-500"></i> My Journeys
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                        className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                     >
                         <i className="fa-solid fa-xmark text-xl"></i>
                     </button>
@@ -49,13 +49,13 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                                 }}
                                 className={`p-4 rounded-lg cursor-pointer border transition-all flex items-center justify-between group ${
                                     isSelected
-                                        ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
-                                        : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                        ? 'bg-blue-50/50 dark:bg-[var(--card-selected-bg)] border-blue-200 dark:border-[var(--card-selected-border)] shadow-sm'
+                                        : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'
                                 }`}
                             >
                                 <div className="min-w-0 flex-1 pr-2">
-                                    <h4 className="text-slate-900 dark:text-slate-100 font-bold truncate">{t.name || 'Untitled Trip'}</h4>
-                                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">
+                                    <h4 className="text-[var(--text-main)] font-bold truncate">{t.name || 'Untitled Trip'}</h4>
+                                    <p className="text-[var(--text-muted)] text-xs mt-1 font-medium">
                                         {formatDate(t.startDate)} - {formatDate(t.endDate)}
                                     </p>
                                 </div>
@@ -66,7 +66,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                                         onOpenTripModal(t);
                                         onClose();
                                     }}
-                                    className="text-slate-400 p-2"
+                                    className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-2 transition-colors"
                                 >
                                     <i className="fa-solid fa-pen-to-square"></i>
                                 </button>
@@ -75,7 +75,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                     })}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
                     <button
                         onClick={() => {
                             onOpenTripModal();
