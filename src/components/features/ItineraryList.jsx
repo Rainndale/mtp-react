@@ -250,9 +250,19 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
-            if (days.includes(overIdStr) && activeIdStr !== overIdStr) {
+            // Find target date if dropping over a Plan instead of a Day Container
+            let targetDate = null;
+            if (days.includes(overIdStr)) {
+                targetDate = overIdStr;
+            } else {
+                const overPlan = localPlans.find(p => p.id === overIdStr);
+                if (overPlan) {
+                    targetDate = overPlan.date;
+                }
+            }
+
+            if (targetDate && activeIdStr !== targetDate) {
                  const sourceDate = activeIdStr;
-                 const targetDate = overIdStr;
 
                  let newPlans = [...localPlans];
 
