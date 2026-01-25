@@ -36,23 +36,39 @@ export const customCollisionDetection = (args) => {
         const dayId = closestDay.data.droppableContainer.id;
 
         if (containerRect && pointerCoordinates) {
-            const relativeY = pointerCoordinates.y - containerRect.top;
+            // STICKY HEADER OFFSET ADJUSTMENT
+            // The DayGroup header is sticky at approx 56px (md) or 48px (mobile) from top.
+            // If the container Top is ABOVE this threshold (scrolled up), the visual header is STUCK at that threshold.
+            // We must detect the collision relative to this VISUAL location, not the physical container top.
+
+            // Assume header sticks at roughly 56px from viewport top.
+            const STICKY_OFFSET = 56;
+
+            // The visual start of the header zone is either the physical top OR the sticky position (max of the two)
+            const visualTop = Math.max(containerRect.top, STICKY_OFFSET);
+
+            // Calculate Y relative to the VISUAL header top
+            const relativeY = pointerCoordinates.y - visualTop;
 
             // ZONE DEFINITIONS
-            // Increased to 150px to provide hysteresis/buffer against layout shifts (e.g., insertion pushing the container)
             const HEADER_ZONE_HEIGHT = 150;
             const FOOTER_ZONE_HEIGHT = 150;
             const containerHeight = containerRect.height;
+            const containerBottom = containerRect.top + containerHeight;
 
             // Check Top Zone (Header)
-            if (relativeY >= 0 && relativeY < HEADER_ZONE_HEIGHT) {
+            // We allow a small negative buffer (-20) just in case the pointer is slightly above the sticky header
+            if (relativeY >= -20 && relativeY < HEADER_ZONE_HEIGHT) {
                 // Find the explicit header droppable for this day to return it as a collision
                 const headerDroppable = droppableContainers.find(c => c.id === `header-${dayId}`);
                 if (headerDroppable) return [{ ...closestDay, data: { droppableContainer: headerDroppable } }];
             }
 
             // Check Bottom Zone (Footer)
-            if (relativeY > (containerHeight - FOOTER_ZONE_HEIGHT) && relativeY <= containerHeight) {
+            // Footer is not sticky, so we measure from physical bottom
+            const distFromBottom = containerBottom - pointerCoordinates.y;
+
+            if (distFromBottom >= 0 && distFromBottom < FOOTER_ZONE_HEIGHT) {
                 // Find the explicit footer droppable
                 const footerDroppable = droppableContainers.find(c => c.id === `footer-${dayId}`);
                 if (footerDroppable) return [{ ...closestDay, data: { droppableContainer: footerDroppable } }];
