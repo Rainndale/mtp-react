@@ -7,6 +7,7 @@ import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSenso
 import { arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
+import DragDebugOverlay, { logDragEvent, dragDebugState } from '../dev/DragDebugOverlay';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
@@ -122,6 +123,13 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
+        // DEBUG LOGGING
+        dragDebugState.activeId = activeId;
+        dragDebugState.overId = overId;
+        dragDebugState.activeType = activeType;
+        dragDebugState.overType = overType;
+        dragDebugState.timestamp = Date.now();
+
         // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
@@ -129,28 +137,41 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             let targetDate = null;
 
+            // Logic Branch Identification
+            let logicBranch = 'UNKNOWN';
+
             if (overType === 'PLAN') {
                 const overPlan = plans.find(p => p.id === overId);
                 if (overPlan) {
                     targetDate = overPlan.date;
+                    logicBranch = 'PLAN_SWAP';
                 }
             } else if (overType === 'DAY_HEADER') {
                 targetDate = over.data.current.date;
+                logicBranch = 'HEADER_INSERT';
             } else if (overType === 'DAY_FOOTER') {
                 targetDate = over.data.current.date;
+                logicBranch = 'FOOTER_INSERT';
             } else if (overType === 'DAY') {
                 targetDate = overId;
+                logicBranch = 'CONTAINER_FALLBACK';
             }
+
+            dragDebugState.action = logicBranch;
+            dragDebugState.targetDate = targetDate;
 
             if (!targetDate) return;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 let newPlans = [...prevPlans];
+                let changed = false;
 
                 // 1. Always update the date first if needed (Migration)
                 if (newPlans[activeIndex].date !== targetDate) {
+                    logDragEvent('DATE CHANGE', { from: newPlans[activeIndex].date, to: targetDate, branch: logicBranch });
                     newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
+                    changed = true;
                 }
 
                 // 2. Position Logic
@@ -158,7 +179,14 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     // Standard Sortable Swap
                     const overIndex = prevPlans.findIndex(p => p.id === overId);
                     if (activeIndex !== overIndex) {
-                        return arrayMove(newPlans, activeIndex, overIndex);
+                        logDragEvent('PLAN SWAP', {
+                            activeId: activeId.substring(0,4),
+                            overId: overId.substring(0,4),
+                            activeIndex,
+                            overIndex
+                        });
+                        newPlans = arrayMove(newPlans, activeIndex, overIndex);
+                        changed = true;
                     }
                 } else if (overType === 'DAY_HEADER') {
                     // Explicit Header -> Insert at START of Day
@@ -169,12 +197,14 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     if (firstPlanIndex !== -1) {
                          // Insert BEFORE the first plan
+                         logDragEvent('HEADER: SPLICE BEFORE', { index: firstPlanIndex, targetDate });
                          newPlans.splice(firstPlanIndex, 0, movedItem);
                     } else {
                          // Day is empty (or just contained the moved item), just push it
+                         logDragEvent('HEADER: PUSH (EMPTY)', { targetDate });
                          newPlans.push(movedItem);
                     }
-                    return newPlans;
+                    changed = true;
 
                 } else if (overType === 'DAY_FOOTER') {
                     // Explicit Footer -> Insert at END of Day
@@ -191,11 +221,22 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     if (lastPlanIndex !== -1) {
                         // Insert AFTER the last plan
-                        newPlans.splice(lastPlanIndex + 1, 0, movedItem);
+                        const insertIdx = lastPlanIndex + 1;
+                        logDragEvent('FOOTER: SPLICE AFTER', { lastIndex: lastPlanIndex, insertIdx, targetDate });
+                        newPlans.splice(insertIdx, 0, movedItem);
                     } else {
+                        logDragEvent('FOOTER: PUSH (EMPTY)', { targetDate });
                         newPlans.push(movedItem);
                     }
-                    return newPlans;
+                    changed = true;
+                }
+
+                if (changed) {
+                    const resultingOrder = newPlans
+                        .filter(p => p.date === targetDate)
+                        .map(p => p.id.substring(0,4));
+
+                    logDragEvent('RESULT STATE', { date: targetDate, order: resultingOrder });
                 }
 
                 return newPlans;
@@ -205,6 +246,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
     const handleDragEnd = async (event) => {
         const { active, over } = event;
+        logDragEvent('DRAG END', { activeId: active.id, overId: over?.id });
+
         setActiveId(null);
         setActivePlan(null);
         setActiveDay(null);
@@ -221,6 +264,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         // Strict Drop Enforcement: Cancel if dropping on Header or Footer
         const overType = over.data.current?.type;
         if (overType === 'DAY_HEADER' || overType === 'DAY_FOOTER') {
+             logDragEvent('CANCEL: DROP ON HEADER/FOOTER', { type: overType });
              // Revert to original state (Cancel the action)
              setLocalPlans(activeTrip.plans);
              return;
@@ -312,6 +356,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 </DragOverlay>,
                 document.body
             )}
+
+            <DragDebugOverlay />
         </DndContext>
     );
 };
