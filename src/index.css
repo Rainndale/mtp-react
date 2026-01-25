@@ -39,8 +39,8 @@ html.dark {
     --modal-bg: #121212;
     --modal-backdrop: rgba(0, 0, 0, 0.8);
     --icon-filter: invert(1);
-    --accent-blue: #60a5fa;
-    --accent-blue-hover: #93c5fd;
+    --accent-blue: #3b82f6;
+    --accent-blue-hover: #2563eb;
     --card-selected-bg: rgba(59, 130, 246, 0.1);
     --card-selected-border: rgba(59, 130, 246, 0.5);
     --cal-range-bg: #1e3a8a;
