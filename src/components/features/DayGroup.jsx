@@ -53,8 +53,8 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
     const showSwapIndicator = isOver && isDraggingDay && !isDragging;
 
-    // Sticky Logic: Disable sticky if ANY drag is active (isDragging = self, isGlobalDragging = plan/day)
-    const shouldStick = !isDragging && !isGlobalDragging;
+    // Ghost Logic: If dragging, hide the real header (opacity-0) and show a visual ghost
+    const showGhost = isDragging || isGlobalDragging;
 
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
@@ -62,6 +62,21 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         zIndex: isDragging ? 20 : 'auto',
         position: 'relative',
     };
+
+    // Shared Header Content
+    const HeaderContent = () => (
+        <>
+            <div className="flex items-center">
+                <div>
+                    <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
+                    <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
+                </div>
+            </div>
+            <div className="text-[var(--text-muted)]">
+                    <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
+            </div>
+        </>
+    );
 
     return (
         <div
@@ -72,32 +87,42 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* Header (Sticky) */}
-            <div
-                id={date}
-                ref={(node) => {
-                    setDragRef(node);
-                    setHeaderDropRef(node);
-                }}
-                {...attributes}
-                {...listeners}
-                onClick={() => toggleDayCollapse(activeTrip.id, date)}
-                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className={`
-                    day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${shouldStick ? 'sticky top-[48px] md:top-[56px] z-40' : ''}
-                `}
-            >
-                <div className="flex items-center">
-                    <div>
-                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
-                        <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
+            {/* Header Wrapper: Grid allows stacking Real and Ghost headers */}
+            <div className="grid">
+                {/* 1. Real Header (Physics) */}
+                {/* Receives Refs. Flows naturally (static) when dragging to fix coordinates. */}
+                <div
+                    id={date}
+                    ref={(node) => {
+                        setDragRef(node);
+                        setHeaderDropRef(node);
+                    }}
+                    {...attributes}
+                    {...listeners}
+                    onClick={() => toggleDayCollapse(activeTrip.id, date)}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    className={`
+                        day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
+                        w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200 col-start-1 row-start-1
+                        ${!showGhost ? 'sticky top-[48px] md:top-[56px] z-40' : 'opacity-0 pointer-events-none'}
+                    `}
+                >
+                    <HeaderContent />
+                </div>
+
+                {/* 2. Ghost Header (Visual) */}
+                {/* Only visible during drag. Sticky. Ignored by pointers/DnD. */}
+                {showGhost && (
+                    <div
+                        className={`
+                            day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
+                            w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200 col-start-1 row-start-1
+                            sticky top-[48px] md:top-[56px] z-50 pointer-events-none
+                        `}
+                    >
+                        <HeaderContent />
                     </div>
-                </div>
-                <div className="text-[var(--text-muted)]">
-                     <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs transition-transform duration-300`}></i>
-                </div>
+                )}
             </div>
 
             <motion.div
