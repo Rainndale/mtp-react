@@ -265,39 +265,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                      const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                      if (overIndex !== -1) {
-                         // EDGE CASE HANDLING FOR INTER-DAY FIRST/LAST ITEMS
-                         if (isMigration) {
-                             // Get plans for the target day to identify first/last
-                             // Note: prevPlans has the old state, newPlans has updated date.
-                             // We check prevPlans for structure of target day *before* our insertion affects it visually?
-                             // No, logic is based on current 'over' target.
-
-                             const targetDayPlans = prevPlans.filter(p => p.date === targetDate);
-                             if (targetDayPlans.length > 0) {
-                                 const firstPlanId = targetDayPlans[0].id;
-                                 const lastPlanId = targetDayPlans[targetDayPlans.length - 1].id;
-
-                                 const isMovingDown = activeIndex < overIndex;
-                                 const isMovingUp = activeIndex > overIndex;
-
-                                 // CASE: Moving Down to Top Item -> Force "Before" (Index - 1)
-                                 if (overId === firstPlanId && isMovingDown) {
-                                      // Only if we are visually above? dnd-kit usually handles this,
-                                      // but arrayMove defaults to 'after' for Down moves.
-                                      // We force it before.
-                                      return arrayMove(newPlans, activeIndex, overIndex - 1);
-                                 }
-
-                                 // CASE: Moving Up to Last Item -> Force "After" (Index + 1)
-                                 if (overId === lastPlanId && isMovingUp) {
-                                      // arrayMove defaults to 'before' for Up moves.
-                                      // We force it after.
-                                      return arrayMove(newPlans, activeIndex, overIndex + 1);
-                                 }
-                             }
-                         }
-
-                         // Standard behavior for everything else (Middle items, Same day)
                          return arrayMove(newPlans, activeIndex, overIndex);
                      }
                 }
