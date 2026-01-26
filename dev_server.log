@@ -10,3 +10,6 @@ Port 5175 is in use, trying another one...
 
   ➜  Local:   http://localhost:5176/
   ➜  Network: use --host to expose
+10:41:47 AM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css
+10:42:07 AM [vite] hmr update /src/components/features/DayGroup.jsx, /src/index.css
+10:42:42 AM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
 import { customCollisionDetection } from '../../utils/dndStrategies';
 
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
-    const { activeTrip, addOrUpdateTrip } = useTrip();
+    const { activeTrip, addOrUpdateTrip, isDayCollapsed } = useTrip();
     const [activeId, setActiveId] = useState(null);
     const [overId, setOverId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
@@ -88,6 +88,16 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const days = getDaysArray(activeTrip.startDate, activeTrip.endDate);
     const plans = localPlans;
 
+    // --- Global Sortable Context Calculation ---
+    // We only include plans from EXPANDED days to ensure the SortableContext matches the visual DOM.
+    // If we included hidden plans, dnd-kit would try to sort them and get confused about positions.
+    const visiblePlans = useMemo(() => {
+        return localPlans.filter(p => !isDayCollapsed(activeTrip.id, p.date));
+    }, [localPlans, activeTrip.id, isDayCollapsed]); // Recalculate if collapse state changes
+
+    const visiblePlanIds = useMemo(() => visiblePlans.map(p => p.id), [visiblePlans]);
+
+
     const handleDragStart = (event) => {
         const { active } = event;
         setActiveId(active.id);
@@ -143,22 +153,77 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 }
             }
 
-            // --- STRICT NO INTER-DAY DnD ---
-            // If the target is not in the same day, do nothing.
-            if (!targetDate || targetDate !== currentDate) {
-                return;
-            }
+            if (!targetDate) return;
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
+                const overIndex = prevPlans.findIndex(p => p.id === overId);
+
                 let newPlans = [...prevPlans];
 
-                // Since we block migration, we only handle Reordering within the same day
-                if (overType === 'PLAN') {
-                     const overIndex = prevPlans.findIndex(p => p.id === overId);
+                // Identify migration
+                const isMigration = currentDate !== targetDate;
 
-                     if (overIndex !== -1) {
-                         return arrayMove(newPlans, activeIndex, overIndex);
+                // 1. Update the date if it has changed (Inter-day Move)
+                if (isMigration) {
+                    newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
+                }
+
+                // 2. Handle Plan Reordering (Standard Sortable behavior)
+                // If over a Plan, we just move the item in the big list.
+                if (overType === 'PLAN' && overIndex !== -1) {
+                     return arrayMove(newPlans, activeIndex, overIndex);
+                }
+
+                // 3. Handle Day Container Drop (Dropping into empty or non-empty day container)
+                if (overType === 'DAY') {
+                     // Logic: If dragging over a Day, we usually want to append to the end of that day.
+
+                     // Find the last item of the target day
+                     const lastPlanIndex = newPlans.findLastIndex(p => p.date === targetDate && p.id !== activeId);
+
+                     if (lastPlanIndex !== -1) {
+                         // Move to after the last item of that day
+                         // Note: arrayMove works by index.
+                         // But we need to be careful. The "activeIndex" might have changed relative to "lastPlanIndex".
+
+                         // It's safer to remove and insert.
+                         const [movedItem] = newPlans.splice(activeIndex, 1);
+
+                         // Recalculate insertion point (findLastIndex might have shifted)
+                         const adjustedLastIndex = newPlans.findLastIndex(p => p.date === targetDate);
+                         newPlans.splice(adjustedLastIndex + 1, 0, movedItem);
+
+                         return newPlans;
+                     } else {
+                         // The day is effectively empty (or only contained the active item).
+                         // We should place it as the FIRST item of that day.
+                         // Or, since the list is sorted by date, we find the LAST item of the PREVIOUS day?
+                         // Actually, we just need to ensure the order is correct relative to other days.
+
+                         // Ideally, we move it to the correct "slot" for that day in the big list.
+                         // If the day is empty, its slot is after (Day-1 plans) and before (Day+1 plans).
+
+                         // BUT: `localPlans` is just a list. We sort it by date anyway in render?
+                         // No, `localPlans` IS the source of truth for order.
+
+                         // So we must move the item to the correct block.
+                         // Find the index where this day's block starts.
+                         // Since the day is empty, we find the first plan that has a date > targetDate.
+                         const nextDayPlanIndex = newPlans.findIndex(p => p.date > targetDate);
+
+                         const [movedItem] = newPlans.splice(activeIndex, 1);
+
+                         if (nextDayPlanIndex !== -1) {
+                             // Insert before the next day's plans
+                             // Note: nextDayPlanIndex might have shifted if activeIndex < nextDayPlanIndex
+                             const adjustedNextIndex = newPlans.findIndex(p => p.date > targetDate);
+                             newPlans.splice(adjustedNextIndex, 0, movedItem);
+                         } else {
+                             // No later plans, append to end
+                             newPlans.push(movedItem);
+                         }
+                         return newPlans;
                      }
                 }
 
@@ -219,7 +284,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
 
         // Handle Plan Finalization
-        // Normalize Order
+        // Normalize Order for ALL plans
         const finalPlans = [...localPlans];
         days.forEach(day => {
             const dayPlans = finalPlans.filter(p => p.date === day);
@@ -242,39 +307,41 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             accessibility={{ restoreFocus: false }}
         >
             <div className="relative space-y-6 pb-24">
-                {days.map((date, idx) => {
-                    const dayPlans = plans.filter(p => p.date === date);
+                <SortableContext items={visiblePlanIds} strategy={verticalListSortingStrategy}>
+                    {days.map((date, idx) => {
+                        const dayPlans = plans.filter(p => p.date === date);
 
-                    // Determine if this day should show a drop indicator
-                    let isOverThisDay = false;
-                    if (overId) {
-                         if (overId === date) {
-                             isOverThisDay = true;
-                         } else {
-                             const overPlan = plans.find(p => p.id === overId);
-                             if (overPlan && overPlan.date === date) {
+                        // Determine if this day should show a drop indicator
+                        let isOverThisDay = false;
+                        if (overId) {
+                             if (overId === date) {
                                  isOverThisDay = true;
+                             } else {
+                                 const overPlan = plans.find(p => p.id === overId);
+                                 if (overPlan && overPlan.date === date) {
+                                     isOverThisDay = true;
+                                 }
                              }
-                         }
-                    }
+                        }
 
-                    const isDaySwapTarget = activeDay && activeDay !== date;
-                    const showDropIndicator = isOverThisDay && isDaySwapTarget;
+                        const isDaySwapTarget = activeDay && activeDay !== date;
+                        const showDropIndicator = isOverThisDay && isDaySwapTarget;
 
-                    return (
-                        <DayGroup
-                            key={date}
-                            date={date}
-                            dayIndex={idx}
-                            plans={dayPlans}
-                            onAddPlan={() => onOpenPlanModal(date)}
-                            onEditPlan={onEditPlan}
-                            activeId={activeId}
-                            isGlobalDragging={!!activeId}
-                            showDropIndicator={showDropIndicator}
-                        />
-                    );
-                })}
+                        return (
+                            <DayGroup
+                                key={date}
+                                date={date}
+                                dayIndex={idx}
+                                plans={dayPlans}
+                                onAddPlan={() => onOpenPlanModal(date)}
+                                onEditPlan={onEditPlan}
+                                activeId={activeId}
+                                isGlobalDragging={!!activeId}
+                                showDropIndicator={showDropIndicator}
+                            />
+                        );
+                    })}
+                </SortableContext>
             </div>
 
             {createPortal(
