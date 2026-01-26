@@ -128,42 +128,54 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         const handleScroll = () => {
             const headerOffset = 60; // Approximate height of the fixed Trip Menu + Sticky Header
+            const visibilityThreshold = headerOffset + 40; // Point where we decide a day is "active"
 
-            // 1. Check if we have scrolled past the cover image area.
-            // Assumption: The first DayGroup starts after the cover image.
-            const firstDayEl = document.getElementById(days[0]);
-
-            if (!firstDayEl) return;
-
-            const firstRect = firstDayEl.getBoundingClientRect();
-
-            // If the top of the first day is below the header offset, we are still seeing the cover image mostly.
-            // So hide the sticky header.
-            if (firstRect.top > headerOffset + 20) {
-                 setIsStickyVisible(false);
-                 return;
-            }
-
-            setIsStickyVisible(true);
-
-            // 2. Find which day is active
-            // Loop through days and find the last one that has passed the threshold
+            // 1. Find which day is effectively "active" (covering the top area)
             let currentDay = days[0];
 
             for (const date of days) {
                 const el = document.getElementById(date);
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    // If the top of this day is above the threshold, it is a candidate.
-                    // We want the LAST candidate (deepest in the list that has been scrolled past).
-                    if (rect.top <= headerOffset + 40) {
+                    // If the top of this day has passed the threshold (is above or near it), it is the active candidate.
+                    if (rect.top <= visibilityThreshold) {
                          currentDay = date;
                     } else {
-                        // Once we find a day that hasn't started yet, break.
                         break;
                     }
                 }
             }
+
+            // 2. Check if the Active Day's header is visible in the viewport.
+            // We want to hide the Sticky Header if the Static Header is right there.
+            const currentDayEl = document.getElementById(currentDay);
+            let shouldShowSticky = false;
+
+            if (currentDayEl) {
+                // The header is the first child, or roughly the top ~50px of the container.
+                // We can check the container's position directly.
+                const rect = currentDayEl.getBoundingClientRect();
+
+                // Logic:
+                // If the Day's Top is visible (below the Trip Menu), we see the Static Header -> HIDE Sticky.
+                // If the Day's Top is scrolled up (above the Trip Menu), we lost context -> SHOW Sticky.
+
+                // rect.top > headerOffset: The header is starting below the menu (Visible)
+                // rect.top <= headerOffset: The header has scrolled under the menu (Hidden)
+
+                if (rect.top <= headerOffset) {
+                    shouldShowSticky = true;
+                } else {
+                    shouldShowSticky = false;
+                }
+
+                // Special Case: The Cover Image.
+                // If we are at the very top (currentDay is the first day), and rect.top is huge (cover image visible),
+                // the logic `rect.top > headerOffset` correctly hides the sticky.
+            }
+
+            // 3. Update State
+            setIsStickyVisible(shouldShowSticky);
 
             const dayIndex = days.indexOf(currentDay);
             setActiveDateInfo({
