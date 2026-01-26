@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PlanItem from './PlanItem';
 import { useTrip } from '../../context/TripContext';
 import { formatDate, formatDayDate } from '../../utils/date';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -82,15 +81,14 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 className="overflow-hidden"
             >
                 <div className="space-y-[18px] pt-4 pb-6 min-h-[50px]">
-                    <SortableContext items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                        {plans.map(plan => (
-                            <PlanItem
-                                key={plan.id}
-                                plan={plan}
-                                onClick={() => onEditPlan(plan)}
-                            />
-                        ))}
-                    </SortableContext>
+                    {/* Plans are now just children, SortableContext is managed by parent */}
+                    {plans.map(plan => (
+                        <PlanItem
+                            key={plan.id}
+                            plan={plan}
+                            onClick={() => onEditPlan(plan)}
+                        />
+                    ))}
 
                     <div
                         onClick={() => onAddPlan(date)}
