@@ -31,9 +31,9 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         data: { type: 'DAY', date }
     });
 
-    // Sticky Logic: Only disable sticky if THIS day is being dragged.
-    // Keeping other headers sticky provides a more stable anchor during plan migration.
-    const shouldStick = !isDragging;
+    // Sticky Logic: Disable sticky when ANY drag is active to prevent layout thrashing
+    // and z-index fighting with dnd-kit's auto-scroll and collision detection.
+    const shouldStick = !isDragging && !isGlobalDragging;
 
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
