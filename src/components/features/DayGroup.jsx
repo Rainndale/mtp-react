@@ -33,7 +33,14 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
 
     // Determine if we should show the swap indicator
     const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
-    const showSwapIndicator = isOver && isDraggingDay && !isDragging;
+    const isPlanInThisDay = activeId && plans.some(p => p.id === activeId);
+    // Show indicator if:
+    // 1. We are hovering over this day container
+    // 2. We are NOT dragging this specific day itself
+    // 3. AND either:
+    //    a. We are dragging a different day (swapping days)
+    //    b. We are dragging a plan that doesn't belong to this day (migrating plan)
+    const showSwapIndicator = isOver && !isDragging && (isDraggingDay || !isPlanInThisDay);
 
     // Sticky Logic: Only disable sticky if THIS day is being dragged.
     // Keeping other headers sticky provides a more stable anchor during plan migration.
@@ -51,7 +58,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
             ref={setDropRef}
             style={style}
             className={`
-                day-group mb-2 transition-all duration-200 rounded-lg
+                day-group mb-2 transition-colors duration-200 rounded-lg
                 ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
