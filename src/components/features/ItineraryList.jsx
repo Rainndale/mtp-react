@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
+import StickyDayHeader from './StickyDayHeader';
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
@@ -15,6 +16,11 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
+
+    // Scroll Spy State
+    const [activeDateInfo, setActiveDateInfo] = useState(null);
+    const [isStickyVisible, setIsStickyVisible] = useState(false);
+    const observerRef = React.useRef(null);
 
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
@@ -87,6 +93,91 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
     const days = getDaysArray(activeTrip.startDate, activeTrip.endDate);
     const plans = localPlans;
+
+    // --- Scroll Spy Logic ---
+    React.useEffect(() => {
+        // Disconnect existing observer
+        if (observerRef.current) observerRef.current.disconnect();
+
+        // 1. Observe the Trip Header (Image) to toggle visibility
+        // We assume the header is an element with id="trip-header-hero" or similar.
+        // If not, we can observe the FIRST day group and check its position.
+
+        // Actually, a simpler way is to observe ALL DayGroups.
+        // Logic: The first DayGroup that is INTERSECTING the viewport top area is the active one.
+
+        const handleIntersect = (entries) => {
+             // We want to find the day that is currently "stuck" to the top.
+             // This corresponds to an element that has its top edge ABOVE the viewport threshold
+             // but its bottom edge BELOW the threshold.
+
+             // Or simpler: Find the first visible element.
+
+             // Let's use a threshold near the top (e.g., 60px down).
+
+             // Strategy:
+             // 1. If any DayGroup is intersecting the top area (0px to 100px), set it as active.
+             // 2. BUT we also need to know if we are ABOVE all days (at the cover image).
+
+             // Better Strategy: Observe sentinel elements? No.
+             // Let's observe the DayGroups with a negative rootMargin.
+        };
+
+        // Let's implement a scroll listener instead for simplicity and robustness with varying heights.
+        // Observers are better for performance but "Current Sticky Header" logic is often easier with scroll calculation.
+
+        const handleScroll = () => {
+            const headerOffset = 60; // Approximate height of the fixed Trip Menu + Sticky Header
+
+            // 1. Check if we have scrolled past the cover image area.
+            // Assumption: The first DayGroup starts after the cover image.
+            const firstDayEl = document.getElementById(days[0]);
+
+            if (!firstDayEl) return;
+
+            const firstRect = firstDayEl.getBoundingClientRect();
+
+            // If the top of the first day is below the header offset, we are still seeing the cover image mostly.
+            // So hide the sticky header.
+            if (firstRect.top > headerOffset + 20) {
+                 setIsStickyVisible(false);
+                 return;
+            }
+
+            setIsStickyVisible(true);
+
+            // 2. Find which day is active
+            // Loop through days and find the last one that has passed the threshold
+            let currentDay = days[0];
+
+            for (const date of days) {
+                const el = document.getElementById(date);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    // If the top of this day is above the threshold, it is a candidate.
+                    // We want the LAST candidate (deepest in the list that has been scrolled past).
+                    if (rect.top <= headerOffset + 40) {
+                         currentDay = date;
+                    } else {
+                        // Once we find a day that hasn't started yet, break.
+                        break;
+                    }
+                }
+            }
+
+            const dayIndex = days.indexOf(currentDay);
+            setActiveDateInfo({
+                date: currentDay,
+                label: `DAY ${dayIndex + 1}`
+            });
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        // Initial check
+        handleScroll();
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [days]); // Re-run if days change
 
     const handleDragStart = (event) => {
         const { active } = event;
@@ -311,6 +402,11 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             onDragEnd={handleDragEnd}
             accessibility={{ restoreFocus: false }}
         >
+            <StickyDayHeader
+                activeDate={activeDateInfo}
+                isVisible={isStickyVisible && !activeId} // Hide when global dragging (optional, but cleaner)
+            />
+
             <div className="relative space-y-6 pb-24">
                 {days.map((date, idx) => {
                     const dayPlans = plans.filter(p => p.date === date);
