@@ -332,10 +332,11 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
                     // Check if we are migrating from another day
                     // activePlan holds the original snapshot, so activePlan.date is the source date
-                    const isMigrationTarget = activePlan && activePlan.date !== date;
+                    // const isMigrationTarget = activePlan && activePlan.date !== date; // Disabled for Plans as per request
                     const isDaySwapTarget = activeDay && activeDay !== date;
 
-                    const showDropIndicator = isOverThisDay && (isMigrationTarget || isDaySwapTarget);
+                    // Only show drop indicator for Day reordering, not Plan migration
+                    const showDropIndicator = isOverThisDay && isDaySwapTarget;
 
                     return (
                         <DayGroup
