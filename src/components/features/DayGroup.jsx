@@ -26,7 +26,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : 1,
+        opacity: isDragging ? 0 : 1,
         zIndex: isDragging ? 20 : 'auto',
         position: 'relative',
     };
@@ -43,6 +43,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
             <div
                 ref={setNodeRef}
                 id={date}
+                style={{ position: isDragging ? 'relative' : undefined }}
                 {...attributes}
                 {...listeners}
                 onClick={() => toggleDayCollapse(activeTrip.id, date)}
