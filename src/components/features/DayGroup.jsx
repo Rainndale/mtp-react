@@ -7,7 +7,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging }) => {
+const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging, showDropIndicator }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
@@ -25,22 +25,11 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
     // Main Container Drop Zone (Fallback)
     const {
         setNodeRef: setDropRef,
-        isOver
+        // isOver is handled by parent now via showDropIndicator
     } = useDroppable({
         id: date,
         data: { type: 'DAY', date }
     });
-
-    // Determine if we should show the swap indicator
-    const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
-    const isPlanInThisDay = activeId && plans.some(p => p.id === activeId);
-    // Show indicator if:
-    // 1. We are hovering over this day container
-    // 2. We are NOT dragging this specific day itself
-    // 3. AND either:
-    //    a. We are dragging a different day (swapping days)
-    //    b. We are dragging a plan that doesn't belong to this day (migrating plan)
-    const showSwapIndicator = isOver && !isDragging && (isDraggingDay || !isPlanInThisDay);
 
     // Sticky Logic: Only disable sticky if THIS day is being dragged.
     // Keeping other headers sticky provides a more stable anchor during plan migration.
@@ -59,7 +48,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
             style={style}
             className={`
                 day-group mb-2 transition-colors duration-200 rounded-lg
-                ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
+                ${showDropIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
             {/* Header (Sticky) */}
