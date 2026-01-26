@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useTrip } from '../../context/TripContext';
 import { getDaysArray, formatDayDate } from '../../utils/date';
 import DayGroup from './DayGroup';
-import StickyDayHeader from './StickyDayHeader';
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import PlanItem from './PlanItem';
@@ -16,11 +15,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
-
-    // Scroll Spy State
-    const [activeDateInfo, setActiveDateInfo] = useState(null);
-    const [isStickyVisible, setIsStickyVisible] = useState(false);
-    const observerRef = React.useRef(null);
 
     // Initialize localPlans directly from activeTrip to prevent flash of empty content
     const [localPlans, setLocalPlans] = useState(() => {
@@ -94,103 +88,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const days = getDaysArray(activeTrip.startDate, activeTrip.endDate);
     const plans = localPlans;
 
-    // --- Scroll Spy Logic ---
-    React.useEffect(() => {
-        // Disconnect existing observer
-        if (observerRef.current) observerRef.current.disconnect();
-
-        // 1. Observe the Trip Header (Image) to toggle visibility
-        // We assume the header is an element with id="trip-header-hero" or similar.
-        // If not, we can observe the FIRST day group and check its position.
-
-        // Actually, a simpler way is to observe ALL DayGroups.
-        // Logic: The first DayGroup that is INTERSECTING the viewport top area is the active one.
-
-        const handleIntersect = (entries) => {
-             // We want to find the day that is currently "stuck" to the top.
-             // This corresponds to an element that has its top edge ABOVE the viewport threshold
-             // but its bottom edge BELOW the threshold.
-
-             // Or simpler: Find the first visible element.
-
-             // Let's use a threshold near the top (e.g., 60px down).
-
-             // Strategy:
-             // 1. If any DayGroup is intersecting the top area (0px to 100px), set it as active.
-             // 2. BUT we also need to know if we are ABOVE all days (at the cover image).
-
-             // Better Strategy: Observe sentinel elements? No.
-             // Let's observe the DayGroups with a negative rootMargin.
-        };
-
-        // Let's implement a scroll listener instead for simplicity and robustness with varying heights.
-        // Observers are better for performance but "Current Sticky Header" logic is often easier with scroll calculation.
-
-        const handleScroll = () => {
-            const headerOffset = 60; // Approximate height of the fixed Trip Menu + Sticky Header
-            const visibilityThreshold = headerOffset + 40; // Point where we decide a day is "active"
-
-            // 1. Find which day is effectively "active" (covering the top area)
-            let currentDay = days[0];
-
-            for (const date of days) {
-                const el = document.getElementById(date);
-                if (el) {
-                    const rect = el.getBoundingClientRect();
-                    // If the top of this day has passed the threshold (is above or near it), it is the active candidate.
-                    if (rect.top <= visibilityThreshold) {
-                         currentDay = date;
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // 2. Check if the Active Day's header is visible in the viewport.
-            // We want to hide the Sticky Header if the Static Header is right there.
-            const currentDayEl = document.getElementById(currentDay);
-            let shouldShowSticky = false;
-
-            if (currentDayEl) {
-                // The header is the first child, or roughly the top ~50px of the container.
-                // We can check the container's position directly.
-                const rect = currentDayEl.getBoundingClientRect();
-
-                // Logic:
-                // If the Day's Top is visible (below the Trip Menu), we see the Static Header -> HIDE Sticky.
-                // If the Day's Top is scrolled up (above the Trip Menu), we lost context -> SHOW Sticky.
-
-                // rect.top > headerOffset: The header is starting below the menu (Visible)
-                // rect.top <= headerOffset: The header has scrolled under the menu (Hidden)
-
-                if (rect.top <= headerOffset) {
-                    shouldShowSticky = true;
-                } else {
-                    shouldShowSticky = false;
-                }
-
-                // Special Case: The Cover Image.
-                // If we are at the very top (currentDay is the first day), and rect.top is huge (cover image visible),
-                // the logic `rect.top > headerOffset` correctly hides the sticky.
-            }
-
-            // 3. Update State
-            setIsStickyVisible(shouldShowSticky);
-
-            const dayIndex = days.indexOf(currentDay);
-            setActiveDateInfo({
-                date: currentDay,
-                label: `DAY ${dayIndex + 1}`
-            });
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        // Initial check
-        handleScroll();
-
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [days]); // Re-run if days change
-
     const handleDragStart = (event) => {
         const { active } = event;
         setActiveId(active.id);
@@ -246,60 +143,23 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 }
             }
 
-            if (!targetDate) return;
+            // --- STRICT NO INTER-DAY DnD ---
+            // If the target is not in the same day, do nothing.
+            if (!targetDate || targetDate !== currentDate) {
+                return;
+            }
 
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
                 let newPlans = [...prevPlans];
 
-                // Identify migration
-                const isMigration = currentDate !== targetDate;
-
-                // 1. Update the date if it has changed
-                if (isMigration) {
-                    newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
-                }
-
-                // 2. Handle Plan Reordering
+                // Since we block migration, we only handle Reordering within the same day
                 if (overType === 'PLAN') {
                      const overIndex = prevPlans.findIndex(p => p.id === overId);
 
                      if (overIndex !== -1) {
                          return arrayMove(newPlans, activeIndex, overIndex);
                      }
-                }
-
-                // 3. Handle Day Container Drop (Bottom Append)
-                if (overType === 'DAY') {
-                     // Check if active item is ALREADY the last item of the target day (visually)
-                     const plansInTargetDay = newPlans.filter(p => p.date === targetDate);
-                     const lastPlan = plansInTargetDay[plansInTargetDay.length - 1];
-
-                     // If it's already the last item...
-                     if (lastPlan && lastPlan.id === activeId) {
-                         // If we performed a migration (date change), we must return newPlans to save that state.
-                         if (isMigration) {
-                             return newPlans;
-                         }
-                         // Otherwise, if date is same and position is same, do nothing (prevent infinite re-render).
-                         return prevPlans;
-                     }
-
-                     // Find the last plan of the target day (excluding active item) to insert after
-                     const lastPlanIndex = newPlans.findLastIndex(p => p.date === targetDate && p.id !== activeId);
-
-                     if (lastPlanIndex !== -1) {
-                         const [movedItem] = newPlans.splice(activeIndex, 1);
-                         // Re-calculate last index (should be the same as lastPlanIndex if we just removed activeId, unless activeId was before it)
-                         const adjustedLastIndex = newPlans.findLastIndex(p => p.date === targetDate);
-                         // Insert after
-                         newPlans.splice(adjustedLastIndex + 1, 0, movedItem);
-                         return newPlans;
-                     }
-                     // If day is empty (except for active item which we just moved via date change),
-                     // it's already in the right place (index 0 of that day).
-                     // But we must return newPlans if isMigration happened.
-                     if (isMigration) return newPlans;
                 }
 
                 return newPlans;
@@ -358,7 +218,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return;
         }
 
-        // Handle Plan Finalization (Just saving the state from DragOver)
+        // Handle Plan Finalization
         // Normalize Order
         const finalPlans = [...localPlans];
         days.forEach(day => {
@@ -381,11 +241,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             onDragEnd={handleDragEnd}
             accessibility={{ restoreFocus: false }}
         >
-            <StickyDayHeader
-                activeDate={activeDateInfo}
-                isVisible={isStickyVisible && !activeId} // Hide when global dragging (optional, but cleaner)
-            />
-
             <div className="relative space-y-6 pb-24">
                 {days.map((date, idx) => {
                     const dayPlans = plans.filter(p => p.date === date);
@@ -396,8 +251,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          if (overId === date) {
                              isOverThisDay = true;
                          } else {
-                             // If over a plan, check if that plan belongs to this day
-                             // We check localPlans because they reflect the current visual state
                              const overPlan = plans.find(p => p.id === overId);
                              if (overPlan && overPlan.date === date) {
                                  isOverThisDay = true;
@@ -405,12 +258,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                          }
                     }
 
-                    // Check if we are migrating from another day
-                    // activePlan holds the original snapshot, so activePlan.date is the source date
-                    // const isMigrationTarget = activePlan && activePlan.date !== date; // Disabled for Plans as per request
                     const isDaySwapTarget = activeDay && activeDay !== date;
-
-                    // Only show drop indicator for Day reordering, not Plan migration
                     const showDropIndicator = isOverThisDay && isDaySwapTarget;
 
                     return (
