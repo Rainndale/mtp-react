@@ -12,6 +12,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activeId, setActiveId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null);
+    const [overId, setOverId] = useState(null);
     const [dragWidth, setDragWidth] = useState(null);
 
     // Initialize localPlans directly from activeTrip
@@ -108,11 +109,17 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
     };
 
+    const handleDragOver = (event) => {
+        const { over } = event;
+        setOverId(over ? over.id : null);
+    };
+
     const handleDragEnd = async (event) => {
         const { active, over } = event;
         setActiveId(null);
         setActivePlan(null);
         setActiveDay(null);
+        setOverId(null);
         setDragWidth(null);
 
         if (!over) return;
@@ -120,15 +127,22 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         // 1. Handle Day Reordering (Swapping Day Contents)
         if (active.data.current?.type === 'DAY') {
-             if (over.data.current?.type === 'DAY') {
-                 // We are reordering days.
-                 // Strategy: Swap the dates of all plans in the source day with the target day.
-                 const sourceDate = active.id;
-                 const targetDate = over.id;
+             const sourceDate = active.id;
+             let targetDate = null;
 
-                 // If dragging a Day, `active.id` is the date.
-                 if (sourceDate === targetDate) return;
+             const overType = over.data.current?.type;
 
+             if (overType === 'DAY') {
+                 targetDate = over.id;
+             } else if (overType === 'PLAN') {
+                 // If dropping over a plan, find its date
+                 const overPlan = localPlans.find(p => p.id === over.id);
+                 if (overPlan) {
+                     targetDate = overPlan.date;
+                 }
+             }
+
+             if (targetDate && sourceDate !== targetDate) {
                  const sourcePlans = localPlans.filter(p => p.date === sourceDate);
                  const targetPlans = localPlans.filter(p => p.date === targetDate);
                  const otherPlans = localPlans.filter(p => p.date !== sourceDate && p.date !== targetDate);
@@ -200,6 +214,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
             accessibility={{ restoreFocus: false }}
         >
@@ -208,8 +223,9 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     {days.map((date, idx) => {
                         const dayPlans = localPlans.filter(p => p.date === date);
 
-                        // No drop indicator logic needed for same-day only (handled by Sortable gap)
-                        const showDropIndicator = false;
+                        // Show drop indicator ONLY when dragging a DAY and hovering over a different day
+                        const isOverThisDay = overId === date || (overId && localPlans.find(p => p.id === overId)?.date === date);
+                        const showDropIndicator = !!activeDay && isOverThisDay && activeDay !== date;
 
                         return (
                             <DayGroup
