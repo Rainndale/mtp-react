@@ -31,10 +31,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         data: { type: 'DAY', date }
     });
 
-    // Sticky Logic: Disable sticky when ANY drag is active to prevent layout thrashing
-    // and z-index fighting with dnd-kit's auto-scroll and collision detection.
-    const shouldStick = !isDragging && !isGlobalDragging;
-
     const style = {
         // No transform/transition for the container, only opacity if this item is the one being dragged (original)
         opacity: isDragging ? 0.4 : 1,
@@ -51,7 +47,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 ${showDropIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
             `}
         >
-            {/* Header (Sticky) */}
+            {/* Header (Static) */}
             <div
                 id={date}
                 ref={setDragRef}
@@ -62,7 +58,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 className={`
                     day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
                     w-[95%] md:w-[99%] mx-auto cursor-pointer transition-colors duration-200
-                    ${shouldStick ? 'sticky top-[48px] md:top-[56px] z-40' : ''}
                 `}
             >
                 <div className="flex items-center">
