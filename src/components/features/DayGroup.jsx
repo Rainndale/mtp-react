@@ -7,11 +7,11 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) => {
+const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
-    // DnD Hooks - Split Draggable (Header) and Droppable (Container)
+    // DnD Hooks - Draggable (Header) for Day Reordering
     const {
         attributes,
         listeners,
@@ -22,20 +22,15 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
         data: { type: 'DAY', date }
     });
 
+    // Droppable (Container) for Day Reordering target
     const {
         setNodeRef: setDropRef,
-        isOver
     } = useDroppable({
         id: date,
         data: { type: 'DAY', date }
     });
 
-    // Determine if we should show the swap indicator
-    const isDraggingDay = activeId && /^\d{4}-\d{2}-\d{2}$/.test(activeId);
-    const showSwapIndicator = isOver && isDraggingDay && !isDragging;
-
     const style = {
-        // No transform/transition for the container, only opacity if this item is the one being dragged (original)
         opacity: isDragging ? 0.4 : 1,
         zIndex: isDragging ? 20 : 'auto',
         position: 'relative',
@@ -46,10 +41,11 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
             ref={setDropRef}
             style={style}
             className={`
-                day-group mb-2 transition-all duration-200 rounded-lg
-                ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
+                day-group mb-2 transition-colors duration-200 rounded-lg
+                border-2 border-transparent
             `}
         >
+            {/* Header (Static) */}
             <div
                 id={date}
                 ref={setDragRef}
@@ -59,8 +55,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 className={`
                     day-header bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-1.5 mb-2 flex justify-between items-center
-                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-all duration-200
-                    ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40'}
+                    w-[95%] md:w-[99%] mx-auto cursor-pointer transition-colors duration-200
                 `}
             >
                 <div className="flex items-center">
@@ -79,12 +74,13 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 animate={{
                     height: isCollapsed ? 0 : 'auto',
                     opacity: isCollapsed ? 0 : 1,
-                    marginBottom: isCollapsed ? 0 : 24 // space-y-6 equivalent
+                    marginBottom: isCollapsed ? 0 : 24
                 }}
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="overflow-hidden"
             >
                 <div className="space-y-[18px] pt-4 pb-6 min-h-[50px]">
+                    {/* Local SortableContext ensures plans can only be sorted within this day */}
                     <SortableContext items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
                         {plans.map(plan => (
                             <PlanItem
@@ -97,7 +93,11 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
 
                     <div
                         onClick={() => onAddPlan(date)}
-                        className="h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors"
+                        className={`
+                            h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed
+                            border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 text-slate-500 dark:text-slate-400
+                            rounded-lg text-sm font-medium cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors
+                        `}
                     >
                         Tap here to add new plan
                     </div>

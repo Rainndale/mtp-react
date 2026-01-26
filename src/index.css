@@ -153,14 +153,16 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* Itinerary Layout */
 .day-header {
-    position: sticky;
-    top: 48px;
-    z-index: 40;
     cursor: pointer;
     transition: border-color 0.2s;
+    position: sticky;
+    top: 3.5rem;
+    z-index: 40;
 }
 @media (min-width: 768px) {
-    .day-header { top: 56px; }
+    .day-header {
+        top: 4rem;
+    }
 }
 
 .plan-item {

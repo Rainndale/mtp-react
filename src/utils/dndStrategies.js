@@ -1,75 +1,63 @@
-import { closestCorners, pointerWithin, rectIntersection, closestCenter } from '@dnd-kit/core';
+import { closestCorners, pointerWithin, rectIntersection } from '@dnd-kit/core';
 
 export const customCollisionDetection = (args) => {
     const { active, droppableContainers, pointerCoordinates } = args;
 
-    // Check if the active item is a 'DAY'
-    // We safely access data.current just in case
+    if (!active || !pointerCoordinates) return closestCorners(args);
+
     const activeType = active.data.current?.type;
 
-    if (activeType === 'DAY') {
-        // Filter candidates: Only allow 'DAY' containers to be drop targets
+    if (activeType === 'PLAN') {
         const dayContainers = droppableContainers.filter(
             (container) => container.data.current?.type === 'DAY'
         );
 
-        // Use pointerWithin on the filtered list
-        // This ensures dragging a Day only detects collisions when the pointer is
-        // explicitly INSIDE another Day container, providing more precise target detection.
-        return pointerWithin({
+        const collidingDay = pointerWithin({
             ...args,
-            droppableContainers: dayContainers,
+            droppableContainers: dayContainers
         });
-    }
 
-    // Default behavior for Plans (or anything else)
-    // Plans can interact with both Days (to move to that day) and other Plans (to reorder)
+        if (collidingDay && collidingDay.length > 0) {
+            const dayContainerId = collidingDay[0].id;
+            const dayContainer = droppableContainers.find(c => c.id === dayContainerId);
 
-    // First, try pointerWithin to see if we are directly over a Plan or Day
-    const collisions = pointerWithin(args);
+            if (dayContainer) {
+                const targetDate = dayContainer.data.current?.date;
 
-    // If we have no collisions, return empty
-    if (collisions.length === 0) return collisions;
+                // Robust filtering: Match plans by their 'date' property
+                // This ensures we only consider plans that belong to the target day
+                const plansInDay = droppableContainers.filter(c => {
+                    return c.data.current?.type === 'PLAN' &&
+                           c.data.current?.plan?.date === targetDate;
+                }).sort((a, b) => a.rect.current.top - b.rect.current.top);
 
-    // Check if we strictly hit a Plan (highest priority)
-    const overPlan = collisions.find(c => c.data.droppableContainer.data.current?.type === 'PLAN');
-    if (overPlan) {
-        return [overPlan];
-    }
+                if (plansInDay.length === 0) {
+                    return [{ id: dayContainerId }];
+                }
 
-    // If we didn't hit a Plan, check if we hit a Day (container)
-    const overDay = collisions.find(c => c.data.droppableContainer.data.current?.type === 'DAY');
+                const firstPlan = plansInDay[0];
+                const lastPlan = plansInDay[plansInDay.length - 1];
 
-    if (overDay) {
-        // We are inside a Day container, but not directly over a Plan (likely in a gap).
-        // To prevent flickering and ensure we "make space" properly, we should find the
-        // closest Plan within this Day to the pointer.
+                // Top Padding Check (Project to First Item)
+                // If pointer is above the top of the first item
+                if (pointerCoordinates.y < firstPlan.rect.current.top) {
+                     return [{ id: firstPlan.id }];
+                }
 
-        const dayId = overDay.data.droppableContainer.id;
+                // Bottom Padding Check (Project to Container -> Append)
+                // If pointer is below the bottom of the last item
+                if (pointerCoordinates.y > lastPlan.rect.current.bottom) {
+                    return [{ id: dayContainerId }];
+                }
 
-        // Filter all droppables to find Plans belonging to this Day
-        const plansInDay = droppableContainers.filter(c =>
-            c.data.current?.type === 'PLAN' &&
-            c.data.current?.plan?.date === dayId
-        );
-
-        // If there are plans in this day, find the closest one
-        if (plansInDay.length > 0) {
-            const closestPlan = closestCenter({
-                ...args,
-                droppableContainers: plansInDay
-            });
-
-            if (closestPlan.length > 0) {
-                // Return the closest plan as the collision target
-                return closestPlan;
+                // Middle Zone: Use closestCorners restricted to these plans
+                return closestCorners({
+                    ...args,
+                    droppableContainers: plansInDay
+                });
             }
         }
-
-        // If no plans in the day (empty day), or calculation failed, fall back to the Day container
-        return [overDay];
     }
 
-    // Fallback (unlikely to reach here if collisions found, but safe)
-    return collisions;
+    return closestCorners(args);
 };
