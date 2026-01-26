@@ -120,7 +120,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         if (activeId === overId) return;
 
         const activeType = active.data.current?.type;
-        const overType = over.data.current?.type;
 
         // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
@@ -162,6 +161,32 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         const activeIdStr = active.id;
         const overIdStr = over.id;
+        const activeType = active.data.current?.type;
+
+        // CANCEL IF CROSS-DAY DROP (Strict Same-Day)
+        if (activeType === 'PLAN') {
+            const activePlan = localPlans.find(p => p.id === activeIdStr);
+            let targetDate = null;
+
+            // Determine the "date" we are dropping over
+            if (days.includes(overIdStr)) {
+                // Dropped on a day header
+                targetDate = overIdStr;
+            } else {
+                // Dropped on another plan
+                const overPlan = localPlans.find(p => p.id === overIdStr);
+                if (overPlan) {
+                    targetDate = overPlan.date;
+                }
+            }
+
+            // If we are over a valid target date that differs from the active plan's date, CANCEL.
+            if (activePlan && targetDate && activePlan.date !== targetDate) {
+                 // Reset to original state to cancel any visual reordering that occurred
+                 setLocalPlans(activeTrip.plans);
+                 return;
+            }
+        }
 
         // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
@@ -198,7 +223,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return;
         }
 
-        // Handle Plan Finalization
+        // Handle Plan Finalization (Same Day)
         // Normalize Order
         const finalPlans = [...localPlans];
         days.forEach(day => {
