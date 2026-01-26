@@ -14,7 +14,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
-    const [dragDebugState, setDragDebugState] = useState({});
 
     // Initialize localPlans directly from activeTrip
     const [localPlans, setLocalPlans] = useState(() => {
@@ -123,100 +122,28 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         const activeType = active.data.current?.type;
         const overType = over.data.current?.type;
 
-        // DEBUG LOGGING
-        dragDebugState.activeId = activeId;
-        dragDebugState.overId = overId;
-        dragDebugState.activeType = activeType;
-        dragDebugState.overType = overType;
-        dragDebugState.timestamp = Date.now();
-
         // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
-            if (!activePlan) return;
+            const overPlan = plans.find(p => p.id === overId);
 
-            const sourceDate = activePlan.date;
-            let targetDate = null;
+            if (!activePlan || !overPlan) return;
 
-            // Determine Target Date based on what we are hovering
-            if (overType === 'DAY') {
-                targetDate = overId;
-            } else if (overType === 'PLAN') {
-                const overPlan = plans.find(p => p.id === overId);
-                if (overPlan) targetDate = overPlan.date;
+            // STRICT SAME-DAY CHECK: If dates differ, abort immediately.
+            if (activePlan.date !== overPlan.date) {
+                return;
             }
 
-            if (!targetDate) return;
-
-            const originalPlan = activeTrip.plans.find(p => p.id === activeId);
-            const isMigration = originalPlan && originalPlan.date !== targetDate;
-            dragDebugState.isMigration = isMigration;
-
+            // SAME DAY REORDER
             setLocalPlans((prevPlans) => {
                 const activeIndex = prevPlans.findIndex(p => p.id === activeId);
-                let newPlans = [...prevPlans];
-
-                // --- STATE A: MIGRATION (Inter-Day) ---
-                if (isMigration) {
-                    // Update the date immediately so it 'belongs' to the new list logically
-                    if (newPlans[activeIndex].date !== targetDate) {
-                        newPlans[activeIndex] = { ...newPlans[activeIndex], date: targetDate };
-                    }
-
-                    // Calculate Insertion Logic using Geometry
-                    if (overType === 'PLAN') {
-                        const overRect = over.rect;
-                        const activeRect = active.rect.current.translated;
-
-                        if (overRect && activeRect) {
-                            const overCenterY = overRect.top + overRect.height / 2;
-                            const activeCenterY = activeRect.top + activeRect.height / 2;
-                            const isBelow = activeCenterY > overCenterY;
-
-                            const overIndex = prevPlans.findIndex(p => p.id === overId);
-
-                            // If inserting BELOW, we want to target index + 1
-                            // If inserting ABOVE, we want to target index
-                            // arrayMove handles the shift, but we need to feed it the correct "visual" target index
-                            // Since the item is ALREADY in the array (at activeIndex), arrayMove treats it as a move.
-
-                            // Use the SPLICE approach to ensure exact insertion
-                            // 1. Remove from array completely (from its old position)
-                            // 2. Insert at calculated index relative to the NEW array state
-
-                            const [movedItem] = newPlans.splice(activeIndex, 1);
-
-                            // Recalculate overIndex in the reduced array
-                            const adjustedOverIndex = newPlans.findIndex(p => p.id === overId);
-
-                            const insertIndex = isBelow ? adjustedOverIndex + 1 : adjustedOverIndex;
-
-                            newPlans.splice(insertIndex, 0, movedItem);
-                            return newPlans;
-                        }
-                    }
-
-                    if (overType === 'DAY') {
-                         // Empty day or container hover -> Move to end if empty, else do nothing (wait for plan hover)
-                         const dayPlans = newPlans.filter(p => p.date === targetDate && p.id !== activeId);
-                         if (dayPlans.length === 0) {
-                             const [movedItem] = newPlans.splice(activeIndex, 1);
-                             newPlans.push(movedItem);
-                             return newPlans;
-                         }
-                    }
-
-                    return newPlans;
-                }
-
-                // --- STATE B: SAME DAY REORDER ---
-                // Standard arrayMove is sufficient here
                 const overIndex = prevPlans.findIndex(p => p.id === overId);
-                if (overIndex !== -1 && activeIndex !== overIndex) {
-                     return arrayMove(newPlans, activeIndex, overIndex);
+
+                if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+                     return arrayMove(prevPlans, activeIndex, overIndex);
                 }
 
-                return newPlans;
+                return prevPlans;
             });
         }
     };
@@ -238,9 +165,19 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
         // Handle Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
-            if (days.includes(overIdStr) && activeIdStr !== overIdStr) {
+            // Find target date if dropping over a Plan instead of a Day Container
+            let targetDate = null;
+            if (days.includes(overIdStr)) {
+                targetDate = overIdStr;
+            } else {
+                const overPlan = localPlans.find(p => p.id === overIdStr);
+                if (overPlan) {
+                    targetDate = overPlan.date;
+                }
+            }
+
+            if (targetDate && activeIdStr !== targetDate) {
                  const sourceDate = activeIdStr;
-                 const targetDate = overIdStr;
 
                  let newPlans = [...localPlans];
 
