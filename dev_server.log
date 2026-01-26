@@ -13,3 +13,5 @@ Port 5175 is in use, trying another one...
 10:41:47 AM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css
 10:42:07 AM [vite] hmr update /src/components/features/DayGroup.jsx, /src/index.css
 10:42:42 AM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css
+1:41:41 PM [vite] hmr update /src/components/features/DayGroup.jsx, /src/index.css
+1:42:12 PM [vite] hmr update /src/components/features/ItineraryList.jsx, /src/index.css
