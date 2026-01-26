@@ -11,6 +11,7 @@ import { customCollisionDetection } from '../../utils/dndStrategies';
 const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
     const [activeId, setActiveId] = useState(null);
+    const [overId, setOverId] = useState(null);
     const [activePlan, setActivePlan] = useState(null);
     const [activeDay, setActiveDay] = useState(null); // For dragging days
     const [dragWidth, setDragWidth] = useState(null);
@@ -90,6 +91,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const handleDragStart = (event) => {
         const { active } = event;
         setActiveId(active.id);
+        setOverId(null);
 
         if (active.rect.current?.initial?.width) {
             setDragWidth(active.rect.current.initial.width);
@@ -112,6 +114,8 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
     const handleDragOver = (event) => {
         const { active, over } = event;
+        setOverId(over?.id || null);
+
         if (!over) return;
 
         const activeId = active.id;
@@ -236,6 +240,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
     const handleDragEnd = async (event) => {
         const { active, over } = event;
         setActiveId(null);
+        setOverId(null);
         setActivePlan(null);
         setActiveDay(null);
         setDragWidth(null);
@@ -308,8 +313,29 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         >
             <div className="relative space-y-6 pb-24">
                 {days.map((date, idx) => {
-                    const dayPlans = plans
-                        .filter(p => p.date === date);
+                    const dayPlans = plans.filter(p => p.date === date);
+
+                    // Determine if this day should show a drop indicator
+                    let isOverThisDay = false;
+                    if (overId) {
+                         if (overId === date) {
+                             isOverThisDay = true;
+                         } else {
+                             // If over a plan, check if that plan belongs to this day
+                             // We check localPlans because they reflect the current visual state
+                             const overPlan = plans.find(p => p.id === overId);
+                             if (overPlan && overPlan.date === date) {
+                                 isOverThisDay = true;
+                             }
+                         }
+                    }
+
+                    // Check if we are migrating from another day
+                    // activePlan holds the original snapshot, so activePlan.date is the source date
+                    const isMigrationTarget = activePlan && activePlan.date !== date;
+                    const isDaySwapTarget = activeDay && activeDay !== date;
+
+                    const showDropIndicator = isOverThisDay && (isMigrationTarget || isDaySwapTarget);
 
                     return (
                         <DayGroup
@@ -321,6 +347,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                             onEditPlan={onEditPlan}
                             activeId={activeId}
                             isGlobalDragging={!!activeId}
+                            showDropIndicator={showDropIndicator}
                         />
                     );
                 })}
