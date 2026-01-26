@@ -3,47 +3,52 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PlanItem from './PlanItem';
 import { useTrip } from '../../context/TripContext';
 import { formatDate, formatDayDate } from '../../utils/date';
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging, showDropIndicator }) => {
+const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGlobalDragging }) => {
     const { activeTrip, isDayCollapsed, toggleDayCollapse } = useTrip();
     const isCollapsed = isDayCollapsed(activeTrip.id, date);
 
-    // Switch to useSortable for the Day itself (to allow Day reordering)
+    // DnD Hooks - Draggable (Header) for Day Reordering
     const {
         attributes,
         listeners,
-        setNodeRef,
-        transform,
-        transition,
+        setNodeRef: setDragRef,
         isDragging
-    } = useSortable({
+    } = useDraggable({
+        id: date,
+        data: { type: 'DAY', date }
+    });
+
+    // Droppable (Container) for Day Reordering target
+    const {
+        setNodeRef: setDropRef,
+    } = useDroppable({
         id: date,
         data: { type: 'DAY', date }
     });
 
     const style = {
-        transform: CSS.Translate.toString(transform),
-        transition,
-        opacity: isDragging ? 0 : 1,
+        opacity: isDragging ? 0.4 : 1,
         zIndex: isDragging ? 20 : 'auto',
         position: 'relative',
     };
 
     return (
         <div
+            ref={setDropRef}
             style={style}
             className={`
                 day-group mb-2 transition-colors duration-200 rounded-lg
-                ${showDropIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
+                border-2 border-transparent
             `}
         >
-            {/* Header (Drag Handle) */}
+            {/* Header (Static) */}
             <div
-                ref={setNodeRef}
                 id={date}
-                style={{ position: isDragging ? 'relative' : undefined }}
+                ref={setDragRef}
                 {...attributes}
                 {...listeners}
                 onClick={() => toggleDayCollapse(activeTrip.id, date)}
@@ -75,8 +80,8 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
                 className="overflow-hidden"
             >
                 <div className="space-y-[18px] pt-4 pb-6 min-h-[50px]">
-                    {/* Explicit ID for SortableContext ensures isolation */}
-                    <SortableContext id={date} items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    {/* Local SortableContext ensures plans can only be sorted within this day */}
+                    <SortableContext items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
                         {plans.map(plan => (
                             <PlanItem
                                 key={plan.id}
