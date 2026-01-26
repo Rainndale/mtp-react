@@ -33,7 +33,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
 
     return (
         <div
-            ref={setNodeRef}
             style={style}
             className={`
                 day-group mb-2 transition-colors duration-200 rounded-lg
@@ -42,6 +41,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId, isGl
         >
             {/* Header (Drag Handle) */}
             <div
+                ref={setNodeRef}
                 id={date}
                 {...attributes}
                 {...listeners}
