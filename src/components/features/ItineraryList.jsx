@@ -120,30 +120,143 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         if (activeId === overId) return;
 
         const activeType = active.data.current?.type;
+        const overType = over.data.current?.type;
 
         // 1. Handling PLAN Dragging
         if (activeType === 'PLAN') {
             const activePlan = plans.find(p => p.id === activeId);
-            const overPlan = plans.find(p => p.id === overId);
+            if (!activePlan) return;
 
-            if (!activePlan || !overPlan) return;
+            // Scenario A: Dropping over another PLAN
+            if (overType === 'PLAN') {
+                const overPlan = plans.find(p => p.id === overId);
+                if (!overPlan) return;
 
-            // STRICT SAME-DAY CHECK: If dates differ, abort immediately.
-            if (activePlan.date !== overPlan.date) {
-                return;
+                setLocalPlans((prevPlans) => {
+                    const activeIndex = prevPlans.findIndex(p => p.id === activeId);
+                    const overIndex = prevPlans.findIndex(p => p.id === overId);
+
+                    if (activeIndex === -1 || overIndex === -1) return prevPlans;
+
+                    const newPlans = [...prevPlans];
+
+                    // Update date if crossing days
+                    if (newPlans[activeIndex].date !== overPlan.date) {
+                         newPlans[activeIndex] = { ...newPlans[activeIndex], date: overPlan.date };
+                    }
+
+                    // Geometry-Aware Insertion Logic
+                    const activeNode = active.rect.current?.translated;
+                    const overNode = document.getElementById(overId);
+
+                    if (activeNode && overNode) {
+                        const overRect = overNode.getBoundingClientRect();
+                        const activeCenterY = activeNode.top + activeNode.height / 2;
+                        const overCenterY = overRect.top + overRect.height / 2;
+
+                        const isBelow = activeCenterY > overCenterY;
+                        const isMovingDown = activeIndex < overIndex;
+
+                        let newOverIndex = overIndex;
+
+                        if (isMovingDown) {
+                            // Moving Down
+                            // If Below (Bottom Half) -> Target = overIndex (visually after)
+                            // If Above (Top Half) -> Target = overIndex - 1 (visually before)
+                            newOverIndex = isBelow ? overIndex : overIndex - 1;
+                        } else {
+                            // Moving Up
+                            // If Below (Bottom Half) -> Target = overIndex + 1 (visually after)
+                            // If Above (Top Half) -> Target = overIndex (visually before)
+                            newOverIndex = isBelow ? overIndex + 1 : overIndex;
+                        }
+
+                        // Boundary check
+                        if (newOverIndex < 0) newOverIndex = 0;
+                        if (newOverIndex >= newPlans.length) newOverIndex = newPlans.length - 1;
+
+                        return arrayMove(newPlans, activeIndex, newOverIndex);
+                    }
+
+                    // Fallback to standard behavior if geometry fails
+                    return arrayMove(newPlans, activeIndex, overIndex);
+                });
             }
 
-            // SAME DAY REORDER
-            setLocalPlans((prevPlans) => {
-                const activeIndex = prevPlans.findIndex(p => p.id === activeId);
-                const overIndex = prevPlans.findIndex(p => p.id === overId);
+            // Scenario B: Dropping over a DAY CONTAINER (Empty day or header)
+            else if (overType === 'DAY') {
+                const overDayDate = overId; // The ID of the Day Group is the date string
 
-                if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-                     return arrayMove(prevPlans, activeIndex, overIndex);
-                }
+                setLocalPlans((prevPlans) => {
+                    const activeIndex = prevPlans.findIndex(p => p.id === activeId);
+                    if (activeIndex === -1) return prevPlans;
 
-                return prevPlans;
-            });
+                    const newPlans = [...prevPlans];
+                    const activeItem = newPlans[activeIndex];
+
+                    // Update date if moving between days
+                    if (activeItem.date !== overDayDate) {
+                        activeItem.date = overDayDate;
+                    }
+
+                    // Remove from old position
+                    const [movedItem] = newPlans.splice(activeIndex, 1);
+
+                    // Smart Insertion Logic for Day Container
+                    // Find plans belonging to the target day
+                    const dayPlans = newPlans.filter(p => p.date === overDayDate);
+
+                    let insertIndex = newPlans.length; // Default to end
+
+                    if (dayPlans.length > 0 && active.rect.current?.translated) {
+                        const activeRect = active.rect.current.translated;
+                        const activeCenterY = activeRect.top + activeRect.height / 2;
+
+                        // Find the first plan that is below the cursor (visually)
+                        // This implies we should insert *before* that plan
+                        const targetPlan = dayPlans.find(p => {
+                            const node = document.getElementById(p.id);
+                            if (!node) return false;
+                            const rect = node.getBoundingClientRect();
+                            const planCenterY = rect.top + rect.height / 2;
+                            return activeCenterY < planCenterY;
+                        });
+
+                        if (targetPlan) {
+                            // Insert before target plan
+                            insertIndex = newPlans.findIndex(p => p.id === targetPlan.id);
+                        } else {
+                            // Below all plans -> Insert after the last plan of that day
+                            const lastPlan = dayPlans[dayPlans.length - 1];
+                            const lastIndex = newPlans.findIndex(p => p.id === lastPlan.id);
+                            insertIndex = lastIndex + 1;
+                        }
+                    } else if (dayPlans.length > 0) {
+                        // Fallback: Append to end of day if geometry not available
+                         const lastPlan = dayPlans[dayPlans.length - 1];
+                         const lastIndex = newPlans.findIndex(p => p.id === lastPlan.id);
+                         insertIndex = lastIndex + 1;
+                    } else {
+                        // Day is empty, logic allows pushing to end (which is effectively index 0 relative to day, but end of array)
+                        // We need to ensure we don't just push if the array has other days' plans?
+                        // If dayPlans is empty, inserting at `newPlans.length` puts it at the very bottom of the global list.
+                        // Ideally we should insert it where the day *should* be?
+                        // But `plans` is sorted by date/order in `useEffect`.
+                        // For transient drag state, appending is usually fine as it will render in the correct day group.
+                        // Wait, if I append to end, and Day 1 is empty, but Day 2 has plans.
+                        // Day 1 item is now after Day 2 items in `plans` array.
+                        // `DayGroup` renders `plans.filter(p => p.date === date)`.
+                        // So the order in the global array doesn't affect *which* day it renders in, only order within day if we rely on array order.
+                        // So appending is fine for rendering.
+                        insertIndex = newPlans.length;
+                    }
+
+                    // Insert at calculated index
+                    newPlans.splice(insertIndex, 0, movedItem);
+
+                    return newPlans;
+                });
+            }
         }
     };
 
@@ -160,37 +273,10 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
         }
 
         const activeIdStr = active.id;
-        const overIdStr = over.id;
-        const activeType = active.data.current?.type;
 
-        // CANCEL IF CROSS-DAY DROP (Strict Same-Day)
-        if (activeType === 'PLAN') {
-            const activePlan = localPlans.find(p => p.id === activeIdStr);
-            let targetDate = null;
-
-            // Determine the "date" we are dropping over
-            if (days.includes(overIdStr)) {
-                // Dropped on a day header
-                targetDate = overIdStr;
-            } else {
-                // Dropped on another plan
-                const overPlan = localPlans.find(p => p.id === overIdStr);
-                if (overPlan) {
-                    targetDate = overPlan.date;
-                }
-            }
-
-            // If we are over a valid target date that differs from the active plan's date, CANCEL.
-            if (activePlan && targetDate && activePlan.date !== targetDate) {
-                 // Reset to original state to cancel any visual reordering that occurred
-                 setLocalPlans(activeTrip.plans);
-                 return;
-            }
-        }
-
-        // Handle Day Reordering (Day vs Day)
+        // Handling Day Reordering (Day vs Day)
         if (days.includes(activeIdStr)) {
-            // Find target date if dropping over a Plan instead of a Day Container
+            const overIdStr = over.id;
             let targetDate = null;
             if (days.includes(overIdStr)) {
                 targetDate = overIdStr;
@@ -203,9 +289,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
 
             if (targetDate && activeIdStr !== targetDate) {
                  const sourceDate = activeIdStr;
-
                  let newPlans = [...localPlans];
-
                  const sourceDayPlans = newPlans.filter(p => p.date === sourceDate);
                  const targetDayPlans = newPlans.filter(p => p.date === targetDate);
                  const otherPlans = newPlans.filter(p => p.date !== sourceDate && p.date !== targetDate);
@@ -214,7 +298,6 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                  const updatedTargetPlans = targetDayPlans.map(p => ({ ...p, date: sourceDate }));
 
                  newPlans = [...otherPlans, ...updatedSourcePlans, ...updatedTargetPlans];
-
                  setLocalPlans(newPlans);
                  await addOrUpdateTrip({ ...activeTrip, plans: newPlans });
             } else {
@@ -223,10 +306,11 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
             return;
         }
 
-        // Handle Plan Finalization (Same Day)
-        // Normalize Order
+        // Handle Plan Finalization
         const finalPlans = [...localPlans];
-        days.forEach(day => {
+        const daysArray = getDaysArray(activeTrip.startDate, activeTrip.endDate);
+
+        daysArray.forEach(day => {
             const dayPlans = finalPlans.filter(p => p.date === day);
             dayPlans.forEach((p, idx) => {
                 const planIndex = finalPlans.findIndex(fp => fp.id === p.id);
