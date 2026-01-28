@@ -38,10 +38,11 @@ const ConfirmationModal = ({
                 );
             case 'info':
             default:
-                // No default icon for info to keep it clean unless requested, but let's add a subtle one if desired.
-                // For now, keeping it clean as per original implementation which had no icon for non-danger.
-                // But if we want "cinematic", an icon usually helps.
-                return null;
+                return (
+                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <i className="fa-solid fa-floppy-disk text-3xl text-[var(--accent-blue)]"></i>
+                    </div>
+                );
         }
     };
 
