@@ -13,6 +13,11 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     const [calMonth, setCalMonth] = useState(new Date().getMonth());
     const [calYear, setCalYear] = useState(new Date().getFullYear());
 
+    // Initial state tracking for dirty check
+    const [initialName, setInitialName] = useState('');
+    const [initialStartDate, setInitialStartDate] = useState(null);
+    const [initialEndDate, setInitialEndDate] = useState(null);
+
     // Conflict handling
     const [showConflict, setShowConflict] = useState(false);
     const [pendingTrip, setPendingTrip] = useState(null);
@@ -23,12 +28,21 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     // Delete Confirmation
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    // Save/Discard Confirmation
+    const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
     useEffect(() => {
         if (isOpen) {
             if (tripToEdit) {
                 setName(tripToEdit.name);
                 setStartDate(tripToEdit.startDate);
                 setEndDate(tripToEdit.endDate);
+
+                setInitialName(tripToEdit.name);
+                setInitialStartDate(tripToEdit.startDate);
+                setInitialEndDate(tripToEdit.endDate);
+
                 const d = new Date(tripToEdit.startDate + 'T00:00:00');
                 if (!isNaN(d.getTime())) {
                     setCalMonth(d.getMonth());
@@ -38,14 +52,28 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
                 setName('');
                 setStartDate(null);
                 setEndDate(null);
+
+                setInitialName('');
+                setInitialStartDate(null);
+                setInitialEndDate(null);
+
                 setCalMonth(new Date().getMonth());
                 setCalYear(new Date().getFullYear());
             }
             setShowConflict(false);
             setPendingTrip(null);
             setValidationError(null);
+            setShowSaveConfirm(false);
+            setShowDiscardConfirm(false);
         }
     }, [isOpen, tripToEdit]);
+
+    const checkDirty = () => {
+        if (name !== initialName) return true;
+        if (startDate !== initialStartDate) return true;
+        if (endDate !== initialEndDate) return true;
+        return false;
+    };
 
     const handleDayClick = (dateStr) => {
         if (!startDate || (startDate && endDate)) {
@@ -108,7 +136,7 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
         return days;
     };
 
-    const handleSave = async (force = false) => {
+    const handleSaveRequest = () => {
         const missingFields = [];
         if (!name) missingFields.push("Trip Name");
         if (!startDate) missingFields.push("Start Date");
@@ -119,6 +147,16 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
             return;
         }
 
+        // Check if dirty
+        if (!checkDirty()) {
+            // Nothing changed, just close or maybe confirm even if no change?
+            // Usually if no change, we can just close, or proceed to execute save (which does nothing).
+            // But user said "Only changing trip title ask for confirmation".
+            // If no change, we probably don't need to ask. But to be safe and consistent with "Save", we can just close.
+            onClose();
+            return;
+        }
+
         const tripData = {
             id: tripToEdit ? tripToEdit.id : `t_${Date.now()}`,
             name,
@@ -126,24 +164,40 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
             endDate,
             plans: tripToEdit ? tripToEdit.plans : []
         };
+        setPendingTrip(tripData);
 
         // Check for date conflict logic (cutting off plans)
-        if (tripToEdit && !force) {
+        if (tripToEdit) {
             const hasOutliers = tripToEdit.plans?.some(p => p.date < startDate || p.date > endDate);
             if (hasOutliers) {
-                setPendingTrip(tripData);
                 setShowConflict(true);
                 return;
             }
         }
 
-        // Clean plans if force
-        if (force || (tripToEdit && !force)) { // Logic correction: always filter plans on save
-             tripData.plans = (tripData.plans || []).filter(p => p.date >= startDate && p.date <= endDate);
-        }
+        // If no conflict, show Save Confirmation
+        setShowSaveConfirm(true);
+    };
+
+    const executeSave = async (force = false) => {
+        const tripData = pendingTrip;
+
+        // Clean plans if force (conflict confirmed) OR normal save
+        // Logic correction: always filter plans on save to ensure data integrity
+        tripData.plans = (tripData.plans || []).filter(p => p.date >= startDate && p.date <= endDate);
 
         await addOrUpdateTrip(tripData);
+        setShowConflict(false);
+        setShowSaveConfirm(false);
         onClose();
+    };
+
+    const handleCancelRequest = () => {
+        if (checkDirty()) {
+            setShowDiscardConfirm(true);
+        } else {
+            onClose();
+        }
     };
 
     const handleDelete = async () => {
@@ -153,7 +207,7 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} onClose={handleCancelRequest}>
             <div className="flex-1 overflow-y-auto min-h-0 -ml-1 pl-1 -mr-2 pr-2 pb-2 scrollbar-hide">
                 <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter mb-6 text-center leading-none">
                     {tripToEdit ? 'Edit Journey' : 'New Journey'}
@@ -204,8 +258,8 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
                         <button onClick={() => setShowDeleteConfirm(true)} className="px-4 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all text-sm">Delete</button>
                     )}
                     <div className="flex-grow"></div>
-                    <button onClick={onClose} className="px-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
-                    <button onClick={() => handleSave(false)} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
+                    <button onClick={handleCancelRequest} className="px-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
+                    <button onClick={handleSaveRequest} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
                 </div>
             </div>
 
@@ -221,15 +275,39 @@ const TripModal = ({ isOpen, onClose, tripToEdit }) => {
                 variant="warning"
             />
 
-            {/* Conflict Alert */}
+            {/* Conflict Alert (Implies Save) */}
             <ConfirmationModal
                 isOpen={showConflict}
                 onClose={() => setShowConflict(false)}
-                onConfirm={() => handleSave(true)}
+                onConfirm={() => executeSave(true)}
                 title="Date Conflict"
                 message="Changing dates will remove plans outside the window."
                 confirmText="Save & Remove"
                 cancelText="Back"
+                variant="warning"
+            />
+
+            {/* Save Confirmation (No Conflict) */}
+            <ConfirmationModal
+                isOpen={showSaveConfirm}
+                onClose={() => setShowSaveConfirm(false)}
+                onConfirm={() => executeSave(false)}
+                title="Save Changes?"
+                message="Are you sure you want to save these changes?"
+                confirmText="Save"
+                cancelText="Cancel"
+                variant="info"
+            />
+
+            {/* Discard Confirmation */}
+            <ConfirmationModal
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={onClose}
+                title="Discard Changes?"
+                message="You have unsaved changes. Are you sure you want to discard them?"
+                confirmText="Discard"
+                cancelText="Keep Editing"
                 variant="warning"
             />
 

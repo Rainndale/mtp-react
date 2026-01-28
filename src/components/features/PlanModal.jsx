@@ -22,6 +22,13 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
     const [bookingRef, setBookingRef] = useState('');
     const [details, setDetails] = useState('');
 
+    // Initial state for dirty check
+    const [initialState, setInitialState] = useState({});
+
+    // Confirmation Modals
+    const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
     // State to track if the Notes field is focused
     const [isNotesFocused, setIsNotesFocused] = useState(false);
     // Ref for the scrollable container
@@ -40,6 +47,19 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
                 setCost(planToEdit.cost || '');
                 setBookingRef(planToEdit.bookingRef || '');
                 setDetails(planToEdit.details || '');
+
+                setInitialState({
+                    title: planToEdit.title || '',
+                    category: planToEdit.category || 'Activity',
+                    status: planToEdit.status || 'Tentative',
+                    date: planToEdit.date || '',
+                    time: planToEdit.time || '',
+                    location: planToEdit.location || '',
+                    mapLink: planToEdit.mapLink || '',
+                    cost: planToEdit.cost || '',
+                    bookingRef: planToEdit.bookingRef || '',
+                    details: planToEdit.details || ''
+                });
             } else {
                 setTitle('');
                 setCategory('Activity');
@@ -51,8 +71,23 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
                 setCost('');
                 setBookingRef('');
                 setDetails('');
+
+                setInitialState({
+                    title: '',
+                    category: 'Activity',
+                    status: 'Tentative',
+                    date: defaultDate || '',
+                    time: '',
+                    location: '',
+                    mapLink: '',
+                    cost: '',
+                    bookingRef: '',
+                    details: ''
+                });
             }
             setValidationError(null);
+            setShowSaveConfirm(false);
+            setShowDiscardConfirm(false);
         }
     }, [isOpen, planToEdit, defaultDate]);
 
@@ -63,9 +98,21 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
         }
     }, [details, isNotesFocused]);
 
-    const handleSave = async () => {
-        // User Requirement: Only Activity Title is strictly required for the modal check.
-        // Although date is technically needed for itinerary placement, we relax the check as requested.
+    const checkDirty = () => {
+        if (title !== initialState.title) return true;
+        if (category !== initialState.category) return true;
+        if (status !== initialState.status) return true;
+        if (date !== initialState.date) return true;
+        if (time !== initialState.time) return true;
+        if (location !== initialState.location) return true;
+        if (mapLink !== initialState.mapLink) return true;
+        if (cost !== initialState.cost) return true;
+        if (bookingRef !== initialState.bookingRef) return true;
+        if (details !== initialState.details) return true;
+        return false;
+    };
+
+    const handleSaveRequest = () => {
         const missingFields = [];
         if (!title) missingFields.push("Activity Title");
 
@@ -74,6 +121,15 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
             return;
         }
 
+        if (checkDirty()) {
+            setShowSaveConfirm(true);
+        } else {
+            // No changes, just close
+            onClose();
+        }
+    };
+
+    const executeSave = async () => {
         const newPlan = {
             id: planToEdit ? planToEdit.id : `p_${Date.now()}`,
             title,
@@ -100,8 +156,17 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
         }
 
         await addOrUpdateTrip(updatedTrip);
+        setShowSaveConfirm(false);
         if (onSave) {
             onSave(newPlan);
+        } else {
+            onClose();
+        }
+    };
+
+    const handleCancelRequest = () => {
+        if (checkDirty()) {
+            setShowDiscardConfirm(true);
         } else {
             onClose();
         }
@@ -122,7 +187,7 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
     const categories = ['Activity', 'Flight', 'Hotel', 'Food', 'Transport', 'Sightseeing'];
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} onClose={handleCancelRequest}>
             <div
                 ref={scrollContainerRef}
                 className="flex-1 overflow-y-auto min-h-0 -ml-1 pl-1 -mr-2 pr-2 pb-2 scrollbar-hide"
@@ -171,8 +236,8 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
                         <button onClick={() => setShowDeleteConfirm(true)} className="px-4 text-rose-500 font-bold text-sm text-center">Delete</button>
                     )}
                     <div className="flex-grow"></div>
-                    <button onClick={onClose} className="px-6 py-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
-                    <button onClick={handleSave} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
+                    <button onClick={handleCancelRequest} className="px-6 py-4 text-[var(--text-muted)] font-bold hover:text-[var(--text-main)] transition-all text-sm text-center">Cancel</button>
+                    <button onClick={handleSaveRequest} className="px-8 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-lg transition-all shadow-lg text-sm text-center">Save</button>
                 </div>
             </div>
 
@@ -185,6 +250,30 @@ const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate 
                 message={validationError}
                 confirmText="OK"
                 showCancel={false}
+                variant="warning"
+            />
+
+            {/* Save Confirmation */}
+            <ConfirmationModal
+                isOpen={showSaveConfirm}
+                onClose={() => setShowSaveConfirm(false)}
+                onConfirm={executeSave}
+                title="Save Changes?"
+                message="Are you sure you want to save these changes?"
+                confirmText="Save"
+                cancelText="Cancel"
+                variant="info"
+            />
+
+            {/* Discard Confirmation */}
+            <ConfirmationModal
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={onClose}
+                title="Discard Changes?"
+                message="You have unsaved changes. Are you sure you want to discard them?"
+                confirmText="Discard"
+                cancelText="Keep Editing"
                 variant="warning"
             />
 
