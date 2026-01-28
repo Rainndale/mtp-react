@@ -6,7 +6,7 @@ import FloatingSelect from '../ui/FloatingSelect';
 import FloatingTextarea from '../ui/FloatingTextarea';
 import { useTrip } from '../../context/TripContext';
 
-const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
+const PlanModal = ({ isOpen, onClose, onSave, onDelete, planToEdit, defaultDate }) => {
     const { activeTrip, addOrUpdateTrip } = useTrip();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [validationError, setValidationError] = useState(null);
@@ -100,7 +100,11 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
         }
 
         await addOrUpdateTrip(updatedTrip);
-        onClose();
+        if (onSave) {
+            onSave(newPlan);
+        } else {
+            onClose();
+        }
     };
 
     const handleDelete = async () => {
@@ -108,7 +112,11 @@ const PlanModal = ({ isOpen, onClose, planToEdit, defaultDate }) => {
          updatedTrip.plans = updatedTrip.plans.filter(p => p.id !== planToEdit.id);
          await addOrUpdateTrip(updatedTrip);
          setShowDeleteConfirm(false);
-         onClose();
+         if (onDelete) {
+             onDelete();
+         } else {
+             onClose();
+         }
     };
 
     const categories = ['Activity', 'Flight', 'Hotel', 'Food', 'Transport', 'Sightseeing'];
