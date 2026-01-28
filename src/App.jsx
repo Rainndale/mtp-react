@@ -46,6 +46,26 @@ const Content = () => {
         setIsPlanModalOpen(true);
     };
 
+    const handlePlanSave = (savedPlan) => {
+        setIsPlanModalOpen(false);
+        setPlanToView(savedPlan);
+        setIsPlanViewModalOpen(true);
+    };
+
+    const handlePlanDelete = () => {
+        setIsPlanModalOpen(false);
+        setPlanToEdit(null);
+        setPlanToView(null);
+    };
+
+    const handlePlanModalClose = () => {
+        setIsPlanModalOpen(false);
+        if (planToEdit) {
+            setPlanToView(planToEdit);
+            setIsPlanViewModalOpen(true);
+        }
+    };
+
     return (
         <div className="min-h-screen pb-24 bg-[var(--bg-color)] transition-colors duration-400">
             <Sidebar
@@ -90,7 +110,9 @@ const Content = () => {
 
             <PlanModal
                 isOpen={isPlanModalOpen}
-                onClose={() => setIsPlanModalOpen(false)}
+                onClose={handlePlanModalClose}
+                onSave={handlePlanSave}
+                onDelete={handlePlanDelete}
                 planToEdit={planToEdit}
                 defaultDate={defaultPlanDate}
             />
