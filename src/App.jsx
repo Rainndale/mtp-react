@@ -87,7 +87,7 @@ const Content = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
                             <div className="absolute bottom-6 left-6 right-6">
                                 <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic">{activeTrip.name}</h1>
-                                <p className="text-blue-200 font-medium text-sm md:text-base mt-1">
+                                <p className="text-indigo-200 font-medium text-sm md:text-base mt-1">
                                     <i className="fa-solid fa-calendar-days mr-2"></i>
                                     {formatDate(activeTrip.startDate)} — {formatDate(activeTrip.endDate)}
                                 </p>

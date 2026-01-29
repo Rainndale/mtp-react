@@ -39,7 +39,7 @@ const ConfirmationModal = ({
             case 'info':
             default:
                 return (
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto mb-6">
+                    <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center mx-auto mb-6">
                         <i className="fa-solid fa-floppy-disk text-3xl text-[var(--accent-blue)]"></i>
                     </div>
                 );

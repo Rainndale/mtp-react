@@ -271,7 +271,7 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                     {activeId ? (
                         activeDay ? (
                              <div className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
-                                <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
+                                <span className="text-indigo-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
                                 <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(activeDay)}</h3>
                             </div>
                         ) : (

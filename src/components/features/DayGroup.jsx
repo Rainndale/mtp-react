@@ -47,7 +47,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
             style={style}
             className={`
                 day-group mb-2 transition-all duration-200 rounded-lg
-                ${showSwapIndicator ? 'border-2 border-dashed border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-2 border-transparent'}
+                ${showSwapIndicator ? 'border-2 border-dashed border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-2 border-transparent'}
             `}
         >
             <div
@@ -65,7 +65,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
             >
                 <div className="flex items-center">
                     <div>
-                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
+                        <span className="text-indigo-600 text-[10px] font-black uppercase tracking-widest">Day {dayIndex + 1}</span>
                         <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(date)}</h3>
                     </div>
                 </div>

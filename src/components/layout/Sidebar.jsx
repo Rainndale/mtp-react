@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold tracking-tight text-[var(--text-main)] flex items-center">
-                        <i className="fa-solid fa-earth-americas mr-3 text-blue-500"></i> My Journeys
+                        <i className="fa-solid fa-earth-americas mr-3 text-indigo-600"></i> My Journeys
                     </h2>
                     <button
                         onClick={onClose}
@@ -49,7 +49,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                                 }}
                                 className={`p-4 rounded-lg cursor-pointer border transition-all flex items-center justify-between group ${
                                     isSelected
-                                        ? 'bg-blue-50/50 dark:bg-[var(--card-selected-bg)] border-blue-200 dark:border-[var(--card-selected-border)] shadow-sm'
+                                        ? 'bg-indigo-50/50 dark:bg-[var(--card-selected-bg)] border-indigo-200 dark:border-[var(--card-selected-border)] shadow-sm'
                                         : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'
                                 }`}
                             >
@@ -81,7 +81,7 @@ const Sidebar = ({ isOpen, onClose, onOpenTripModal }) => {
                             onOpenTripModal();
                             onClose();
                         }}
-                        className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center"
                     >
                         <i className="fa-solid fa-plus mr-2"></i> New Expedition
                     </button>
