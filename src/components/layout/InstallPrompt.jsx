@@ -70,7 +70,7 @@ const InstallPrompt = () => {
                   setShowInstructionModal(true);
               }
           }}
-          className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
+          className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 animate-fade-in"
         >
           <i className="fa-solid fa-download"></i>
           <span>{deferredPrompt ? 'Install App' : 'Install App'}</span>

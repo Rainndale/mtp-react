@@ -17,12 +17,12 @@
     --modal-bg: #ffffff;
     --modal-backdrop: rgba(15, 23, 42, 0.4);
     --icon-filter: invert(0);
-    --accent-blue: #3b82f6;
-    --accent-blue-hover: #2563eb;
-    --card-selected-bg: rgba(37, 99, 235, 0.05);
-    --card-selected-border: rgba(37, 99, 235, 0.4);
-    --cal-range-bg: #dbeafe;
-    --cal-range-text: #1e40af;
+    --accent-blue: #4f46e5;
+    --accent-blue-hover: #4338ca;
+    --card-selected-bg: rgba(79, 70, 229, 0.05);
+    --card-selected-border: rgba(79, 70, 229, 0.4);
+    --cal-range-bg: #e0e7ff;
+    --cal-range-text: #3730a3;
     --dropdown-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15), 0 5px 15px -5px rgba(0, 0, 0, 0.05);
 }
 
@@ -38,12 +38,12 @@ html.dark {
     --modal-bg: #121212;
     --modal-backdrop: rgba(0, 0, 0, 0.8);
     --icon-filter: invert(1);
-    --accent-blue: #3b82f6;
-    --accent-blue-hover: #2563eb;
-    --card-selected-bg: rgba(59, 130, 246, 0.1);
-    --card-selected-border: rgba(59, 130, 246, 0.5);
-    --cal-range-bg: #1e3a8a;
-    --cal-range-text: #bfdbfe;
+    --accent-blue: #4f46e5;
+    --accent-blue-hover: #4338ca;
+    --card-selected-bg: rgba(79, 70, 229, 0.1);
+    --card-selected-border: rgba(79, 70, 229, 0.5);
+    --cal-range-bg: #312e81;
+    --cal-range-text: #c7d2fe;
     --dropdown-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 

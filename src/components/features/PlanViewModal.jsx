@@ -35,7 +35,7 @@ const PlanViewModal = ({ isOpen, onClose, plan, onEdit }) => {
                         {plan.status || 'Tentative'}
                     </div>
                     <div>
-                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest block mb-1">
+                        <span className="text-indigo-600 text-[10px] font-black uppercase tracking-widest block mb-1">
                             {plan.category || 'Plan'}
                         </span>
                         <h2 className="text-2xl font-black text-[var(--text-main)] italic uppercase tracking-tighter break-words leading-none">

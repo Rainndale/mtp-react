@@ -126,7 +126,7 @@ const PullToRefresh = ({ onRefresh, children }) => {
                 style={refreshStyle}
             >
                 <i
-                    className={`fa-solid ${refreshing ? 'fa-spinner animate-spin' : 'fa-arrow-down'} text-blue-500 text-lg`}
+                    className={`fa-solid ${refreshing ? 'fa-spinner animate-spin' : 'fa-arrow-down'} text-indigo-600 text-lg`}
                     style={iconStyle}
                 ></i>
             </div>

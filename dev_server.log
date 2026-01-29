@@ -1,10 +1,9 @@
 
 > voyager-app@1.0.0 dev
-> vite
+> vite --port 3000
 
 
-  VITE v5.4.21  ready in 405 ms
+  VITE v5.4.21  ready in 432 ms
 
-  ➜  Local:   http://localhost:5173/
+  ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
-4:48:05 AM [vite] hmr update /src/components/ui/ConfirmationModal.jsx, /src/index.css
