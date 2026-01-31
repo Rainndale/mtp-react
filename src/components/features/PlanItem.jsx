@@ -29,30 +29,78 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
         'Cancelled': 'bg-[#ef4444]',
     };
 
-    const content = (
-        <>
-            <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg z-[2] ${statusColors[plan.status] || statusColors['Tentative']}`} />
+    const handleMapClick = (e) => {
+        e.stopPropagation();
+        if (plan.mapLink) {
+            window.open(plan.mapLink, '_blank');
+        }
+    };
 
-            <div className="flex-grow pl-2 z-10 overflow-hidden w-full min-w-0">
-                <h5 className="text-[var(--text-main)] font-bold transition-colors text-sm md:text-base mb-1 truncate">
+    const handleTransitClick = (e) => {
+        e.stopPropagation();
+        // Placeholder for transit directions - simply searches location on google maps with dir for now if mapLink not specific
+        const query = plan.location ? encodeURIComponent(plan.location) : '';
+        if (query) {
+             window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+        }
+    };
+
+    const content = (
+        <div className="flex flex-col w-full h-full relative">
+            {/* Status Strip */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1.5 z-[2] ${statusColors[plan.status] || statusColors['Tentative']}`} />
+
+            <div className="flex-grow pl-4 pr-3 pt-3 pb-2 z-10 w-full min-w-0 flex flex-col">
+                {/* Header: Time and Cost */}
+                <div className="flex justify-between items-start mb-2">
+                    <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+                        <i className="fa-regular fa-clock text-[10px]"></i>
+                        <span>{plan.time || '--:--'}</span>
+                    </div>
+                    {plan.cost && (
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            {plan.cost}
+                        </span>
+                    )}
+                </div>
+
+                {/* Title */}
+                <h5 className="text-[var(--text-main)] font-bold text-base mb-1 truncate leading-tight">
                     {plan.title || 'Untitled Plan'}
                 </h5>
 
-                <div className="flex items-center text-xs md:text-sm text-[var(--text-muted)] font-medium w-full overflow-hidden min-w-0">
-                    <span className="whitespace-nowrap flex-shrink-0 mr-1">{plan.time || '--:--'} &middot;</span>
+                {/* Location (replaces Description) */}
+                <div className="text-sm text-[var(--text-muted)] font-medium truncate mb-3 min-h-[20px]">
+                    {plan.location || 'No location specified'}
+                </div>
 
-                    <div className="truncate flex-grow">
-                        {plan.location || 'No location specified'}
-                    </div>
+                {/* Footer Buttons */}
+                <div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-2 flex items-center">
+                    <button
+                        onClick={handleMapClick}
+                        className="flex-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                    >
+                        <i className="fa-solid fa-map-location-dot"></i>
+                        Map
+                    </button>
+                    <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                    <button
+                         onClick={handleTransitClick}
+                         className="flex-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                    >
+                        <i className="fa-solid fa-diamond-turn-right"></i>
+                        Transit
+                    </button>
                 </div>
             </div>
-        </>
+        </div>
     );
 
+    const cardClasses = "relative rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] overflow-hidden transition-shadow group w-[90.25%] md:w-[94.05%] mx-auto";
+
     if (isOverlay) {
-         // Static render for Drag Overlay (no listeners/refs)
          return (
-            <div className="h-16 md:h-20 rounded-lg p-2 flex items-center bg-[var(--card-bg)] border border-[var(--card-border)] w-full shadow-2xl scale-105 transition-transform overflow-hidden relative">
+            <div className={`${cardClasses} shadow-2xl scale-105`}>
                  {content}
             </div>
          );
@@ -68,9 +116,8 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
             onClick={onClick}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             className={clsx(
-                "relative h-16 md:h-20 rounded-lg p-2 flex items-center cursor-pointer transition-shadow group w-[90.25%] md:w-[94.05%] mx-auto hover:shadow-md bg-[var(--card-bg)] border border-[var(--card-border)] overflow-hidden",
-                // pseudo-element logic for hit area handled by structure in React usually differently,
-                // but preserving the look
+                cardClasses,
+                "hover:shadow-lg cursor-pointer mb-3"
             )}
         >
            {content}

@@ -270,9 +270,10 @@ const ItineraryList = ({ onOpenPlanModal, onEditPlan }) => {
                 <DragOverlay dropAnimation={null} zIndex={100} style={{ width: dragWidth }}>
                     {activeId ? (
                         activeDay ? (
+                             // Updated Day Overlay to match new Timeline header style somewhat, simplified
                              <div className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-4 py-3 shadow-2xl scale-105 transition-transform">
                                 <span className="text-indigo-600 text-[10px] font-black uppercase tracking-widest block mb-1">Day {days.indexOf(activeDay) + 1}</span>
-                                <h3 className="text-[var(--text-main)] font-extrabold text-base">{formatDayDate(activeDay)}</h3>
+                                <h3 className="text-[var(--text-main)] font-extrabold text-xl leading-none">{formatDayDate(activeDay)}</h3>
                             </div>
                         ) : (
                             activePlan && (
