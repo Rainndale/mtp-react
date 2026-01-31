@@ -31,8 +31,9 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
 
     const handleMapClick = (e) => {
         e.stopPropagation();
-        if (plan.mapLink) {
-            window.open(plan.mapLink, '_blank');
+        const url = plan.mapLink || (plan.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location)}` : null);
+        if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -41,7 +42,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
         // Placeholder for transit directions - simply searches location on google maps with dir for now if mapLink not specific
         const query = plan.location ? encodeURIComponent(plan.location) : '';
         if (query) {
-             window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+             window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -96,7 +97,7 @@ const PlanItem = ({ plan, onClick, isOverlay = false }) => {
         </div>
     );
 
-    const cardClasses = "relative rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] overflow-hidden transition-shadow group w-[90.25%] md:w-[94.05%] mx-auto";
+    const cardClasses = "relative rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] overflow-hidden transition-shadow group w-full";
 
     if (isOverlay) {
          return (

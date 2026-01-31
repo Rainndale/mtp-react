@@ -52,9 +52,9 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
         >
             <div className="flex">
                  {/* Timeline Column */}
-                 <div className="flex flex-col items-center mr-4 pt-1 w-8 flex-shrink-0 relative">
+                 <div className="flex flex-col items-center mr-4 pt-1 w-6 flex-shrink-0 relative">
                      {/* Circular Badge */}
-                     <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold z-10 shadow-md">
+                     <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold z-10 shadow-md">
                          {dayIndex + 1}
                      </div>
                      {/* Vertical Line */}
@@ -112,7 +112,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
 
                             <div
                                 onClick={() => onAddPlan(date)}
-                                className="h-[56px] w-[90.25%] md:w-[94.05%] mx-auto flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 rounded-2xl text-sm font-medium text-slate-500 dark:text-slate-400 cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors"
+                                className="h-[56px] w-full flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 bg-transparent dark:bg-slate-800/30 rounded-2xl text-sm font-medium text-slate-500 dark:text-slate-400 cursor-pointer hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] transition-colors"
                             >
                                 Tap here to add new plan
                             </div>
