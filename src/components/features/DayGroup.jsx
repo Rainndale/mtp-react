@@ -63,13 +63,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                     ${isDragging ? '' : 'sticky top-[48px] md:top-[56px] z-40 bg-[var(--bg-color)] py-2'}
                 `}
             >
-                {/* Badge Column (Sticky with Header) */}
-                <div className="flex flex-col items-center mr-4 w-6 flex-shrink-0">
-                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-md">
-                        {dayIndex + 1}
-                    </div>
-                </div>
-
                 {/* Date Text Column */}
                 <div className="flex-1 min-w-0 flex justify-between items-start">
                     <div>
@@ -86,7 +79,7 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 </div>
             </div>
 
-            {/* Body Content: Line + Plans */}
+            {/* Body Content: Plans */}
             <motion.div
                 initial={false}
                 animate={{
@@ -97,12 +90,6 @@ const DayGroup = ({ date, dayIndex, plans, onAddPlan, onEditPlan, activeId }) =>
                 className="overflow-hidden"
             >
                 <div className="flex min-h-[20px]">
-                    {/* Timeline Line Column (Static relative to plans) */}
-                    <div className="flex flex-col items-center mr-4 w-6 flex-shrink-0 relative">
-                        {/* Line runs from very top (connecting to sticky header) to bottom */}
-                        <div className="w-0.5 bg-indigo-100 dark:bg-indigo-900/50 absolute top-0 bottom-0 left-1/2 -translate-x-1/2"></div>
-                    </div>
-
                     {/* Plans Column */}
                     <div className="flex-1 min-w-0 pb-4 space-y-4">
                         <SortableContext items={plans.map(p => p.id)} strategy={verticalListSortingStrategy}>
